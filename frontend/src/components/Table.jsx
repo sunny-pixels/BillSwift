@@ -54,24 +54,22 @@ const Table = ({ items, setItems, highlightedItemId }) => {
 
   return (
     <>
-      <div className="mt-10 w-[90%] rounded-lg shadow-lg border border-gray-300 text-[12px]">
-        <div className="max-h-[400px] overflow-y-auto scrollbar-hide">
-          <table className="w-full border-collapse border border-gray-300 rounded-lg">
-            <thead className="top-0 z-10">
-              <tr className="bg-white text-black">
-                <th className="border border-gray-300 px-6 py-3 rounded-tl-lg">
-                  No
-                </th>
-                <th className="border border-gray-300 px-6 py-3">Item Code</th>
-                <th className="border border-gray-300 px-6 py-3">Product</th>
-                <th className="border border-gray-300 px-6 py-3">Quantity</th>
-                <th className="border border-gray-300 px-6 py-3">MRP</th>
-                <th className="border border-gray-300 px-6 py-3 rounded-tr-lg">
+      <div className="w-full rounded-lg shadow-lg border border-[#c4d4d6] text-[12px]">
+        <div className="relative max-h-[452px] overflow-y-auto scrollbar-hide border border-[#c4d4d6] rounded-lg">
+          <table className="w-full border-separate border-spacing-0">
+            <thead className="sticky top-0 z-10 bg-white text-[#006A71]">
+              <tr className="border-b border-[#c4d4d6]">
+                <th className="border border-[#c4d4d6] px-6 py-3">No</th>
+                <th className="border border-[#c4d4d6] px-6 py-3">Item Code</th>
+                <th className="border border-[#c4d4d6] px-6 py-3">Product</th>
+                <th className="border border-[#c4d4d6] px-6 py-3">Quantity</th>
+                <th className="border border-[#c4d4d6] px-6 py-3">MRP</th>
+                <th className="border border-[#c4d4d6] px-6 py-3">
                   Net Amount
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[#9ACBD0]">
               {items && items.length > 0 ? (
                 items.map((i, index) => {
                   const isHighlighted =
@@ -87,44 +85,44 @@ const Table = ({ items, setItems, highlightedItemId }) => {
                       border-b transition-all duration-100  
                       ${
                         isHighlighted
-                          ? "bg-yellow-200 font-medium scale-[1.01] shadow-md"
+                          ? "bg-[#c4d4d6] font-medium scale-[1.01] shadow-md"
                           : "hover:bg-gray-50"
                       }
                     `}
                     >
-                      <td className="border border-gray-300 px-6 py-3 text-center">
-                        {index + 1}
-                      </td>
-                      <td className="border border-gray-300 px-6 py-3 text-center">
-                        {i.itemCode}
-                      </td>
-                      <td className="border border-gray-300 px-6 py-3 text-center">
-                        {i.product}
-                      </td>
-
-                      <td className="border border-gray-300 px-6 py-3 text-center cursor-pointer group">
-                        <div className="flex items-center justify-center space-x-2">
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center cursor-pointer group relative">
+                        <span>{index + 1}</span>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <HiPencilAlt
                             onClick={() => handleEditClick(i._id)}
-                            className="text-xl cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="text-xl cursor-pointer"
                           />
-                          {i.quantity}
                         </div>
                       </td>
-
-                      <td className="border border-gray-300 px-6 py-3 text-center cursor-pointer group">
-                        <div className="flex items-center justify-center space-x-2">
-                          <HiPencilAlt
-                            onClick={() => handleEditClick(i._id)}
-                            className="text-xl cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                          />
-                          {i.mrp}
-                        </div>
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center">
+                        {/* {i.itemCode} */}
+                        {"MANUAL-" +
+                          Math.floor(100000 + Math.random() * 900000)}
+                      </td>
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center">
+                        {i.product.charAt(0).toUpperCase() + i.product.slice(1)}
                       </td>
 
-                      <td className="border border-gray-300 px-6 py-3 text-center cursor-pointer group">
-                        <div className="flex items-center justify-center space-x-2">
-                          {i.netamt}
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center cursor-pointer group">
+                        {/* <div className="flex items-center justify-center space-x-2"> */}
+                        {i.quantity}
+                        {/* </div> */}
+                      </td>
+
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center cursor-pointer group">
+                        {/* <div className="flex items-center justify-center space-x-2"> */}
+                        {i.mrp}
+                        {/* </div> */}
+                      </td>
+
+                      <td className="border border-[#c4d4d6] px-6 py-3 text-center cursor-pointer group">
+                        <div className="flex items-center justify-between w-full px-4">
+                          <span className="flex-1 text-center">{i.netamt}</span>
                           <MdDelete
                             onClick={() => handleDeleteClick(i._id)}
                             className="text-xl cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"

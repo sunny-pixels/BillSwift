@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 
-const SearchItemInventory = ({ onItemHighlight, name }) => {
+const SearchItemInventory = ({ onItemHighlight, name, className }) => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(true);
   const [selectedItem, setSelectedItem] = useState(-1);
   const resultsRef = useRef(null);
 
-  //   console.log("Input=",input)
-  //   console.log("filtered res",results)
-
   useEffect(() => {
     console.log("Updated input value:", input);
-    //   console.log("filtered res",results)
   }, [input]);
 
   useEffect(() => {
@@ -54,7 +50,6 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
               item.product.toLowerCase().includes(value.toLowerCase())
             );
           });
-          //   console.log("fr",filteredResults)
           setResults(filteredResults);
           setShowResults(true);
         });
@@ -65,19 +60,9 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
   };
 
   const handleChange = (value) => {
-    // console.log("val=", value)
     setInput(value);
     fetchData(value);
   };
-
-  // const handleResultClick = (result) => {
-  //   // Set the formatted input
-  //   const formattedInput = `${result.product} - ${result.quantity || 1} - ${
-  //     result.mrp || 0
-  //   }`;
-  //   setInput(formattedInput);
-  //   setShowResults(false);
-  // };
 
   const onItemSelect = (item) => {
     setInput(item.product);
@@ -89,9 +74,7 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      //   console.log("Product entered = ", results[selectedItem].product)
-      //   setInput(results[selectedItem].product);
+    if (e.key === "Enter" && selectedItem >= 0) {
       onItemSelect(results[selectedItem]);
     } else if (e.key === "ArrowUp" && results.length > 0) {
       e.preventDefault();
@@ -106,19 +89,14 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
 
   return (
     <div className="relative w-full flex justify-center"> 
-      <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white w-[90%] h-[35px] mt-10 gap-2">
-        <FaSearch className="text-gray-500 mr-2 text-[15px]" />
+      <div className={`flex items-center border border-[#9ACBD0] rounded-lg px-3 py-2 bg-white w-[90%] mt-4 focus-within:ring-2 focus-within:ring-[#48A6A7] transition duration-200 ${className}`}>
+        <FaSearch className="text-[#48A6A7] mr-2 text-[15px]" />
         <input
           type="text"
           placeholder={name}
-          className="outline-none bg-transparent w-full text-[15px] text-black placeholder-gray-400"
+          className="outline-none bg-transparent w-full text-[15px] text-gray-800 placeholder-gray-400"
           value={input}
           onChange={(e) => handleChange(e.target.value)}
-          //   onFocus={() => {
-          //     if (input.trim() && results.length > 0 && !input.includes(" - ")) {
-          //       setShowResults(true);
-          //     }
-          //   }}
           onKeyDown={handleKeyDown}
         />
       </div>
@@ -129,7 +107,7 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
         input.trim() !== "" && (
           <div
             ref={resultsRef}
-            className="absolute top-[75px] w-[90%] bg-white border border-gray-300 flex flex-col shadow-md max-h-[200px] overflow-y-auto scrollbar-hide z-10"
+            className="absolute top-[60px] w-full bg-white border border-[#9ACBD0] rounded-lg flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide"
           >
             {results.map((result, index) => (
               <div
@@ -139,8 +117,8 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
                 tabIndex={0}
                 className={
                   selectedItem === index
-                    ? "p-3 bg-[#efefef] font-semibold text-[13px] cursor-pointer focus:outline-none"
-                    : "p-3 active:bg-[#efefef] font-semibold text-[13px] cursor-pointer focus:outline-none focus:bg-[#e0e0e0]"
+                    ? "p-3 bg-[#F2EFE7] text-[#006A71] font-medium text-[13px] cursor-pointer focus:outline-none"
+                    : "p-3 hover:bg-[#F2EFE7] text-gray-700 font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#F2EFE7] transition-colors duration-150"
                 }
               >
                 {result?.product || "No Item Code"}

@@ -4,11 +4,10 @@ import autoTable from "jspdf-autotable";
 import SlideBar from "../components/SlideBar";
 import SearchItemBill from "../components/SearchItemBill";
 import Table from "../components/Table";
+import Button from "../components/Button"; // Add this import
 
 const BillPage = () => {
   const [items, setItems] = useState([]);
-
-  // console.log("Items",items)
 
   // Function to add items from search
   const addItem = (item) => {
@@ -95,7 +94,7 @@ const BillPage = () => {
         font: "helvetica",
       },
       headStyles: {
-        fillColor: [41, 128, 185],
+        fillColor: [0, 106, 113], // Changed to match your teal theme #006A71
         textColor: 255,
         fontStyle: "bold",
       },
@@ -129,29 +128,39 @@ const BillPage = () => {
   };
 
   return (
-    <div>
-      <div className="flex">
-        <SlideBar />
-        <div className="w-[100%] flex flex-col items-center">
-          <div className="relative w-full">
-            <SearchItemBill onItemSelect={addItem} name="Add Products" />
+    <div className="flex h-screen bg-[#F2EFE7]">
+      <SlideBar />
+      <div className="flex-1 flex flex-col p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-[#006A71]">Bill Management</h1>
+          <div className="relative w-1/2">
+            <SearchItemBill 
+              onItemSelect={addItem} 
+              name="Add Products"
+              className="w-full px-4 py-2 border border-[#9ACBD0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#48A6A7]"
+            />
           </div>
-          <Table items={items} setItems={setItems} />
-          <div className="flex justify-end mt-10 w-[90%] gap-7">
-            <button
-              className="px-3 text-[15px] p-3 rounded-[7px] border border-gray-300 font-bold transition-all duration-300 [&:hover]:bg-gray-900 [&:hover]:text-white"
-              onClick={generatePDF}
-            >
-              Print
-            </button>
-            <div className="border text-[15px] p-3 bg-gray-900 text-white rounded-[10px]">
-              Total:{" "}
-              {items
-                .reduce((sum, item) => sum + (item?.netamt || 0), 0)
-                .toLocaleString()}{" "}
-              Rs
-            </div>
+        </div>
+        
+        <div className="flex max-h-[452px] bg-white rounded-xl overflow-hidden">
+          <Table 
+            items={items} 
+            setItems={setItems}
+            className="w-full divide-y divide-[#9ACBD0]"
+            headerClassName="bg-[#F2EFE7] text-[#006A71]"
+            rowClassName="hover:bg-[#F2EFE7] transition-colors duration-150"
+            highlightClassName="bg-[#9ACBD0] bg-opacity-30"
+          />
+        </div>
+        
+        <div className="flex justify-between items-center mt-8">
+          <div className="text-lg font-bold text-[#006A71]">
+            Total: <span className="text-xl">{items.reduce((sum, item) => sum + (item?.netamt || 0), 0).toLocaleString()} Rs</span>
           </div>
+          <Button 
+            name="Print" 
+            onClick={generatePDF}
+          />
         </div>
       </div>
     </div>

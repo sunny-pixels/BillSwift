@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 
-const SearchItemBill = ({ onItemSelect, name }) => {
+const SearchItemBill = ({ onItemSelect, name, className }) => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(true);
@@ -24,7 +24,7 @@ const SearchItemBill = ({ onItemSelect, name }) => {
       if (selectedElement) {
         selectedElement.scrollIntoView({
           block: "nearest",
-          behavior: "smooth"
+          behavior: "smooth",
         });
       }
     }
@@ -108,12 +108,12 @@ const SearchItemBill = ({ onItemSelect, name }) => {
 
   return (
     <div className="relative w-full flex justify-center">
-      <div className="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white w-[90%] h-[35px] mt-10 gap-2">
-        <FaSearch className="text-gray-500 mr-2 text-[15px]" />
+      <div className={`flex items-center border border-[#9ACBD0] rounded-lg px-3 py-2 bg-white w-[90%] mt-4 focus-within:ring-2 focus-within:ring-[#48A6A7] transition duration-200 ${className}`}>
+        <FaSearch className="text-[#48A6A7] mr-2 text-[15px]" />
         <input
           type="text"
           placeholder={name}
-          className="outline-none bg-transparent w-full text-[15px] text-black placeholder-gray-400"
+          className="outline-none bg-transparent w-full text-[15px] text-gray-800 placeholder-gray-400"
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => {
@@ -129,7 +129,7 @@ const SearchItemBill = ({ onItemSelect, name }) => {
       {showResults && results.length > 0 && input.trim() !== "" && !input.includes(" - ") && (
         <div 
           ref={resultsRef}
-          className="absolute top-[75px] w-[90%] bg-white border border-gray-300 flex flex-col shadow-md max-h-[200px] overflow-y-auto scrollbar-hide z-10"
+          className="absolute top-[60px] w-full bg-white border border-[#9ACBD0] rounded-lg flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide"
         >
           {results.map((result, index) => (
             <div
@@ -139,8 +139,8 @@ const SearchItemBill = ({ onItemSelect, name }) => {
               tabIndex={0}
               className={
                 selectedItem === index 
-                  ? "p-3 bg-blue-100 font-semibold text-[13px] cursor-pointer focus:outline-none" 
-                  : "p-3 active:bg-[#efefef] font-semibold text-[13px] cursor-pointer focus:outline-none focus:bg-[#e0e0e0]"
+                  ? "p-3 bg-[#F2EFE7] text-[#006A71] font-medium text-[13px] cursor-pointer focus:outline-none" 
+                  : "p-3 hover:bg-[#F2EFE7] text-gray-700 font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#F2EFE7] transition-colors duration-150"
               }
             >
               {result?.product || "No Item Code"}
@@ -153,5 +153,3 @@ const SearchItemBill = ({ onItemSelect, name }) => {
 };
 
 export default SearchItemBill;
-
-

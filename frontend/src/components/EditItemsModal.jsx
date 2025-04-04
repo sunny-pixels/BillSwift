@@ -70,13 +70,13 @@ const EditItemsModal = ({ isOpen, onClose, itemId, onItemUpdated }) => {
       }}
     >
       <div 
-        className="bg-white p-6 rounded-lg shadow-lg w-[auto] flex flex-col gap-10"
+        className="bg-[#ecebe8] p-6 rounded-lg shadow-lg w-[auto] flex flex-col gap-10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">Edit Your Item</h2>
+          <h2 className="text-xl font-bold text-[#006A71]">Edit Your Item</h2>
           <button
-            className="text-gray-500 hover:text-gray-700 text-3xl"
+            className="text-gray-500 hover:text-[#48A6A7] text-3xl"
             onClick={onClose}
             type="button"
           >
@@ -85,28 +85,28 @@ const EditItemsModal = ({ isOpen, onClose, itemId, onItemUpdated }) => {
         </div>
         <form className="flex gap-10">
           <input
-            className="border p-3"
+            className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
             type="text"
             placeholder="Enter ItemCode"
             value={itemCode}
             onChange={(e) => setItemCode(e.target.value)}
           />
           <input
-            className="border p-3"
+            className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
             type="text"
             placeholder="Enter Product"
             value={product}
             onChange={(e) => setProduct(e.target.value)}
           />
           <input
-            className="border p-3"
+            className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
             type="number"
             placeholder="Enter Quantity"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
           <input
-            className="border p-3"
+            className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
             type="number"
             placeholder="Enter Mrp"
             value={mrp}
