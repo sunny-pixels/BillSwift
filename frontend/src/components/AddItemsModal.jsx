@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
+const BASE_URL = import.meta.env.VITE_API_URL
+
+
 
 const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
   const [itemCode, setItemCode] = useState("");
@@ -13,7 +16,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
     const netamt = Number(quantity) * Number(mrp);
 
     axios
-      .post("http://localhost:5001/createItem", {
+      .post(`${BASE_URL}/createItem`, {
         itemCode,
         product,
         quantity: Number(quantity),
@@ -21,7 +24,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
         netamt,
       })
       .then((result) => {
-        console.log("item created:",result);
+        console.log("item created:", result);
         // Pass the newly created item back to the parent component
         if (onItemAdded) {
           onItemAdded(result.data);

@@ -8,6 +8,7 @@ import AddItemsModal from "../components/AddItemsModal";
 import axios from "axios";
 import { FaPlus } from "react-icons/fa";
 import { LuArrowUpRight } from "react-icons/lu";
+const BASE_URL = import.meta.env.VITE_API_URL
 
 const InventoryPage = () => {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ const InventoryPage = () => {
   // Function to refresh items
   const fetchItems = () => {
     axios
-      .get("http://localhost:5001")
+      .get(`${BASE_URL}`)
       .then((result) => {
         setItems(result.data);
         // Calculate total value

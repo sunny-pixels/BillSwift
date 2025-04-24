@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Button from "./Button";
 import axios from 'axios';
+const BASE_URL = import.meta.env.VITE_API_URL
+
+
 
 const EditItemsModal = ({ isOpen, onClose, itemId, onItemUpdated }) => {
   // Move state and hooks to the parent component
@@ -14,7 +17,7 @@ const EditItemsModal = ({ isOpen, onClose, itemId, onItemUpdated }) => {
   useEffect(() => {
     if (isOpen && itemId) {
       axios
-        .get("http://localhost:5001/getItem/" + itemId)
+        .get(`${BASE_URL}/getItem/` + itemId)
         .then((result) => {
           const item = result.data;
           // Store the original item for reference
@@ -46,7 +49,7 @@ const EditItemsModal = ({ isOpen, onClose, itemId, onItemUpdated }) => {
     };
     
     axios
-      .put("http://localhost:5001/updateItem/" + itemId, updatedItem)
+      .put(`${BASE_URL}/updateItem/` + itemId, updatedItem)
       .then((response) => {
         // Call the callback with the updated item to update parent state
         if (onItemUpdated) {

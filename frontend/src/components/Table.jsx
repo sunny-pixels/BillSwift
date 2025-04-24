@@ -3,6 +3,8 @@ import { HiPencilAlt } from "react-icons/hi";
 import { MdDelete } from "react-icons/md";
 import EditItemsModal from "./EditItemsModal";
 import axios from "axios";
+const BASE_URL = import.meta.env.VITE_API_URL
+
 
 const Table = ({ items, setItems, highlightedItemId }) => {
   const [showEditModal, setShowEditModal] = useState(false);
@@ -25,7 +27,7 @@ const Table = ({ items, setItems, highlightedItemId }) => {
   const handleDeleteClick = (itemId) => {
     // Confirm before deleting
     axios
-      .delete(`http://localhost:5001/deleteItem/${itemId}`)
+      .delete(`${BASE_URL}/deleteItem/${itemId}`)
       .then(() => {
         // After successful deletion, update items state directly
         setItems(items.filter((item) => item._id !== itemId));

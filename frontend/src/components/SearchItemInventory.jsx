@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const SearchItemInventory = ({ onItemHighlight, name }) => {
   const [input, setInput] = useState("");
@@ -40,7 +41,7 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
 
     // handling the non empty values -> filtered the result as per the input
     if (value.trim()) {
-      fetch("http://localhost:5001/")
+      fetch(`${BASE_URL}`)
         .then((res) => res.json())
         .then((data) => {
           const filteredResults = data.filter((item) => {

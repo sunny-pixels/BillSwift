@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const SearchItemBill = ({ onItemSelect, name, className }) => {
   const [input, setInput] = useState("");
@@ -38,7 +39,7 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
 
     // Only search if the input doesn't have the format "product - quantity - price"
     if (!value.includes(" - ")) {
-      fetch("http://localhost:5001/")
+      fetch(`${BASE_URL}`)
         .then((res) => res.json())
         .then((data) => {
           const filteredResults = data.filter((item) => {
