@@ -43,11 +43,11 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center text-[15px] z-20">
-      <div className="bg-[#ecebe8] p-6 rounded-lg shadow-lg w-[auto] flex flex-col gap-10">
+      <div className="bg-[#202124] p-6 rounded-lg shadow-lg w-[500px] flex flex-col gap-5">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-[#006A71]">Add Your Item</h2>
+          <h2 className="text-xl font-bold text-white">Add Your Item</h2>
           <button
-            className="text-gray-500 hover:text-[#48A6A7] text-3xl"
+            className="text-white hover:text-[#9594a0] text-3xl"
             onClick={onClose}
             type="button"
           >
@@ -56,9 +56,9 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
         </div>
 
         <form className="flex flex-col" onSubmit={handleSubmit}>
-          <div className="flex gap-10">
+          <div className="flex flex-col gap-5">
             <input
-              className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
+              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
               type="text"
               placeholder="Enter ItemCode"
               value={itemCode}
@@ -66,7 +66,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
               required
             />
             <input
-              className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
+              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
               type="text"
               placeholder="Enter Product"
               value={product}
@@ -74,7 +74,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
               required
             />
             <input
-              className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
+              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
               type="number"
               placeholder="Enter Quantity"
               value={quantity}
@@ -82,7 +82,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
               required
             />
             <input
-              className="border p-3 border-[#c4d4d6] focus-within:ring-1 outline-none focus-within:ring-[#48A6A7] rounded-lg"
+              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
               type="number"
               placeholder="Enter Mrp"
               value={mrp}
@@ -92,7 +92,7 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
           </div>
           <button
             type="submit"
-            className="bg-[#48A6A7] hover:bg-[#006A71] text-white font-bold py-2 px-4 mt-7 rounded self-end"
+            className="bg-[#0a66e5] hover:bg-[#9594a0] text-white font-bold py-2 px-4 mt-7 rounded self-end"
           >
             Save
           </button>

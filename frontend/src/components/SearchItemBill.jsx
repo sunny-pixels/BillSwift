@@ -42,7 +42,11 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
         .then((res) => res.json())
         .then((data) => {
           const filteredResults = data.filter((item) => {
-            return item && item.product && item.product.toLowerCase().includes(value.toLowerCase());
+            return (
+              item &&
+              item.product &&
+              item.product.toLowerCase().includes(value.toLowerCase())
+            );
           });
           setResults(filteredResults);
           setShowResults(true);
@@ -60,7 +64,9 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
 
   const handleResultClick = (result) => {
     // Set the formatted input
-    const formattedInput = `${result.product} - ${result.quantity || 1} - ${result.mrp || 0}`;
+    const formattedInput = `${result.product} - ${result.quantity || 1} - ${
+      result.mrp || 0
+    }`;
     setInput(formattedInput);
     setShowResults(false);
   };
@@ -74,18 +80,18 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
           const product = parts[0];
           const quantity = parseInt(parts[1], 10) || 1;
           const mrp = parseFloat(parts[2]) || 0;
-          
+
           // Create item object
           const item = {
             product: product,
             quantity: quantity,
             mrp: mrp,
-            itemCode: "MANUAL-" + Date.now().toString().slice(-6)
+            itemCode: "MANUAL-" + Date.now().toString().slice(-6),
           };
-          
+
           // Add item to table
           onItemSelect(item);
-          
+
           // Clear input after adding
           setInput("");
         }
@@ -107,13 +113,17 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
   };
 
   return (
-    <div className="relative w-full flex justify-center">
-      <div className={`flex items-center border border-[#9ACBD0] rounded-lg px-3 py-2 bg-white w-[90%] mt-4 focus-within:ring-2 focus-within:ring-[#48A6A7] transition duration-200 ${className}`}>
-        <FaSearch className="text-[#48A6A7] mr-2 text-[15px]" />
+    <div className="relative w-[85%] ml-20 flex justify-center">
+      <div
+        className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 bg-[#2a2a2d]`}
+      >
+        <div className="px-3 py-3 rounded-full flex items-center justify-center bg-[#facd40]">
+          <FaSearch className="text-black text-base" />
+        </div>
         <input
           type="text"
           placeholder={name}
-          className="outline-none bg-transparent w-full text-[15px] text-gray-800 placeholder-gray-400"
+          className="outline-none bg-transparent w-full text-[15px] text-white placeholder-gray-400"
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => {
@@ -126,28 +136,31 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
       </div>
 
       {/* Search Results */}
-      {showResults && results.length > 0 && input.trim() !== "" && !input.includes(" - ") && (
-        <div 
-          ref={resultsRef}
-          className="absolute top-[60px] w-full bg-white border border-[#9ACBD0] rounded-lg flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide"
-        >
-          {results.map((result, index) => (
-            <div
-              key={result._id || result.itemCode}
-              onClick={() => handleResultClick(result)}
-              role="button"
-              tabIndex={0}
-              className={
-                selectedItem === index 
-                  ? "p-3 bg-[#F2EFE7] text-[#006A71] font-medium text-[13px] cursor-pointer focus:outline-none" 
-                  : "p-3 hover:bg-[#F2EFE7] text-gray-700 font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#F2EFE7] transition-colors duration-150"
-              }
-            >
-              {result?.product || "No Item Code"}
-            </div>
-          ))}
-        </div>
-      )}
+      {showResults &&
+        results.length > 0 &&
+        input.trim() !== "" &&
+        !input.includes(" - ") && (
+          <div
+            ref={resultsRef}
+            className="absolute top-[45px] w-full bg-[#2a2a2d] border rounded-lg flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide"
+          >
+            {results.map((result, index) => (
+              <div
+                key={result._id || result.itemCode}
+                onClick={() => handleResultClick(result)}
+                role="button"
+                tabIndex={0}
+                className={
+                  selectedItem === index
+                    ? "p-3 bg-[#767c8f] text-white font-medium text-[13px] cursor-pointer focus:outline-none"
+                    : "p-3 hover:bg-[#767c8f] text-white font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#F2EFE7] transition-colors duration-150"
+                }
+              >
+                {result?.product || "No Item Code"}
+              </div>
+            ))}
+          </div>
+        )}
     </div>
   );
 };

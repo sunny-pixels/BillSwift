@@ -14,9 +14,9 @@ const SlideBar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="w-[5%] h-screen flex flex-col items-center justify-betwee text-[#006A71] py-5">
+    <div className="w-[5%] h-screen flex flex-col items-center justify-betwee text-[#767c8f] py-5">
       <FaGripLines
-        className="text-xl cursor-pointer hover:text-blue-400 transition mt-6"
+        className="text-xl cursor-pointer hover:text-blue-400 transition"
         onClick={() => setIsOpen(!isOpen)}
       />
 

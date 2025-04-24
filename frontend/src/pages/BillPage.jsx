@@ -128,39 +128,77 @@ const BillPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#F2EFE7]">
+    <div className="flex h-screen bg-[#141416]">
       <SlideBar />
       <div className="flex-1 flex flex-col p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#006A71]">Bill Management</h1>
-          <div className="relative w-1/2">
-            <SearchItemBill 
-              onItemSelect={addItem} 
-              name="Add Products"
-              className="w-full px-4 py-2 border border-[#9ACBD0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#48A6A7]"
+        <div className=" bg-[#1A1A1C] mt-5 rounded-[20px] h-[400px]">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-white pl-10 pt-4">
+              Bill Management
+            </h1>
+            <div className="relative w-1/2 mt-7 mr-7">
+              <SearchItemBill onItemSelect={addItem} name="Add Products" />
+            </div>
+          </div>
+
+          <div>
+            <Table
+              items={items}
+              setItems={setItems}
+              className="w-full divide-y divide-[#9ACBD0]"
+              headerClassName="bg-[#F2EFE7] text-[#006A71]"
+              rowClassName="hover:bg-[#F2EFE7] transition-colors duration-150"
+              highlightClassName="bg-[#9ACBD0] bg-opacity-30"
             />
           </div>
         </div>
-        
-        <div className="flex max-h-[452px] bg-white rounded-xl overflow-hidden">
-          <Table 
-            items={items} 
-            setItems={setItems}
-            className="w-full divide-y divide-[#9ACBD0]"
-            headerClassName="bg-[#F2EFE7] text-[#006A71]"
-            rowClassName="hover:bg-[#F2EFE7] transition-colors duration-150"
-            highlightClassName="bg-[#9ACBD0] bg-opacity-30"
-          />
-        </div>
-        
-        <div className="flex justify-between items-center mt-8">
-          <div className="text-lg font-bold text-[#006A71]">
-            Total: <span className="text-xl">{items.reduce((sum, item) => sum + (item?.netamt || 0), 0).toLocaleString()} Rs</span>
+
+        <div className="flex flex-col items-end mt-6">
+          <div className="relative w-[150px] h-[150px] rounded-[24px] overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_#3379E9,_#1466e4)]"></div>
+            <div className="relative z-10 h-full flex flex-col justify-between p-4">
+              <div>
+                <div className="text-white text-lg font-medium">Total</div>
+                <div className="text-white text-[32px] font-medium leading-none ">
+                  ₹
+                  {items
+                    .reduce((sum, item) => sum + (item?.netamt || 0), 0)
+                    .toLocaleString()}
+                </div>
+              </div>
+              <div className="relative w-full h-10 bg-white/10 rounded-full overflow-hidden">
+                <div className="absolute left-0 top-0 h-full flex items-center pl-4">
+                  <span className="text-white/50 text-sm ml-10">Print</span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    const button = e.currentTarget;
+                    button.style.transform = "translateX(calc(118px - 100%))";
+                    setTimeout(() => {
+                      generatePDF();
+                      button.style.transform = "translateX(0)";
+                    }, 500);
+                  }}
+                  className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-          <Button 
-            name="Print" 
-            onClick={generatePDF}
-          />
         </div>
       </div>
     </div>

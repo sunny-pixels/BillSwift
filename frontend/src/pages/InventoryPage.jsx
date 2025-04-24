@@ -6,12 +6,16 @@ import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import AddItemsModal from "../components/AddItemsModal";
 import axios from "axios";
+import { FaPlus } from "react-icons/fa";
+import { LuArrowUpRight } from "react-icons/lu";
 
 const InventoryPage = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [items, setItems] = useState([]);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
+
+  const [totalValue, setTotalValue] = useState(0);
 
   const handleAddClick = () => {
     setShowModal(true);
@@ -32,7 +36,7 @@ const InventoryPage = () => {
   const handleHighlightRecord = (item) => {
     console.log("Item highlighted ", item);
     setHighlightedItemId(item.itemCode || item._id);
-    
+
     // Automatically clear the highlight after 3 seconds
     setTimeout(() => {
       setHighlightedItemId(null);
@@ -43,7 +47,15 @@ const InventoryPage = () => {
   const fetchItems = () => {
     axios
       .get("http://localhost:5001")
-      .then((result) => setItems(result.data))
+      .then((result) => {
+        setItems(result.data);
+        // Calculate total value
+        const total = result.data.reduce(
+          (sum, item) => sum + (item.netamt || 0),
+          0
+        );
+        setTotalValue(total);
+      })
       .catch((err) => console.log(err));
   };
 
@@ -52,44 +64,68 @@ const InventoryPage = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#F2EFE7]">
+    <div className="flex h-screen bg-[#141416]">
       <SlideBar />
       <div className="flex-1 flex flex-col p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#006A71]">Inventory Management</h1>
-          <div className="relative w-1/2">
-            <SearchItemInventory 
-              name="Search Product" 
-              onItemHighlight={handleHighlightRecord} 
-              className="w-full px-4 py-2 border border-[#9ACBD0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#48A6A7]"
+        <div className="h-[120px] flex gap-8">
+          <div className="w-[23%] bg-[#0a66e5] border-none rounded-3xl p-4 text-white">
+            <div className="text-sm font-bold">Total Value</div>
+            <div className="text-4xl font-medium pt-2">
+              ₹{totalValue.toLocaleString()}
+            </div>
+          </div>
+          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
+            <div className="text-sm font-bold">Total Items</div>
+            <div className="text-4xl font-medium pt-2 text-white">
+              {items.length}
+            </div>
+          </div>
+          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
+            <div className="text-sm font-bold">Low Stock Items</div>
+            <div className="text-4xl font-medium pt-2 text-white">
+              {items.filter((item) => (item.quantity || 0) < 3).length}
+            </div>
+          </div>
+          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
+            <div className="text-sm font-bold">Out of Stock</div>
+            <div className="text-4xl font-medium pt-2 text-white">
+              {items.filter((item) => (item.quantity || 0) === 0).length}
+            </div>
+          </div>
+        </div>
+
+        <div className=" bg-[#1A1A1C] mt-5 rounded-[20px] h-[400px]">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-white pl-10 pt-4">
+              Inventory Management
+            </h1>
+            <div className="relative w-1/2 mt-7 mr-7">
+              <SearchItemInventory
+                name="Search Product"
+                onItemHighlight={handleHighlightRecord}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Table
+              items={items}
+              setItems={setItems}
+              highlightedItemId={highlightedItemId}
             />
           </div>
         </div>
-        
-        <div className="flex max-h-[452px] bg-white rounded-xl shadow-md overflow-hidden">
-          <Table 
-            items={items} 
-            setItems={setItems} 
-            highlightedItemId={highlightedItemId}
-            className="w-full divide-y divide-[#9ACBD0]"
-            headerClassName="bg-[#F2EFE7] text-[#006A71]"
-            rowClassName="hover:bg-[#F2EFE7] transition-colors duration-150"
-            highlightClassName="bg-[#9ACBD0] bg-opacity-30"
-          />
-        </div>
-        
-        <div className="flex justify-end gap-7 mt-8">
-          <Button 
-            name="Add Item" 
-            onClick={handleAddClick}
-          />
-          <Button 
-            name="Generate Bill" 
+
+        <div className="flex justify-end gap-7 mt-7">
+          <Button name="Add Item" onClick={handleAddClick} icon={<FaPlus />} />
+          <Button
+            name="Generate Bill"
             onClick={handleGenerateBill}
+            icon={<LuArrowUpRight />}
           />
         </div>
       </div>
-      
+
       <AddItemsModal
         isOpen={showModal}
         onClose={handleCloseModal}
