@@ -15,8 +15,12 @@ const InventoryPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [items, setItems] = useState([]);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
-
   const [totalValue, setTotalValue] = useState(0);
+
+  // Function to calculate total value based on current items
+  const calculateTotalValue = (itemsArray) => {
+    return itemsArray.reduce((sum, item) => sum + (item.netamt || 0), 0);
+  };
 
   const handleAddClick = () => {
     setShowModal(true);
@@ -31,11 +35,13 @@ const InventoryPage = () => {
   };
 
   const handleItemAdded = (newItem) => {
-    setItems((prevItems) => [...prevItems, newItem]);
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
+    // Update total value when a new item is added
+    setTotalValue(calculateTotalValue(updatedItems));
   };
 
   const handleHighlightRecord = (item) => {
-    console.log("Item highlighted ", item);
     setHighlightedItemId(item.itemCode || item._id);
 
     // Automatically clear the highlight after 3 seconds
@@ -48,14 +54,11 @@ const InventoryPage = () => {
   const fetchItems = () => {
     axios
       .get(`${BASE_URL}`)
+      // .get(`http://localhost:5001/`)
       .then((result) => {
         setItems(result.data);
         // Calculate total value
-        const total = result.data.reduce(
-          (sum, item) => sum + (item.netamt || 0),
-          0
-        );
-        setTotalValue(total);
+        setTotalValue(calculateTotalValue(result.data));
       })
       .catch((err) => console.log(err));
   };
@@ -63,6 +66,12 @@ const InventoryPage = () => {
   useEffect(() => {
     fetchItems();
   }, []);
+
+  // Function to update items and recalculate total value
+  const handleItemsChange = (updatedItems) => {
+    setItems(updatedItems);
+    setTotalValue(calculateTotalValue(updatedItems));
+  };
 
   return (
     <div className="flex h-screen bg-[#141416]">
@@ -111,7 +120,7 @@ const InventoryPage = () => {
           <div>
             <Table
               items={items}
-              setItems={setItems}
+              setItems={handleItemsChange} // Use the new handler
               highlightedItemId={highlightedItemId}
             />
           </div>

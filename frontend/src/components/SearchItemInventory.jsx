@@ -9,9 +9,9 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
   const [selectedItem, setSelectedItem] = useState(-1);
   const resultsRef = useRef(null);
 
-  useEffect(() => {
-    console.log("Updated input value:", input);
-  }, [input]);
+  // useEffect(() => {
+  //   console.log("Updated input value:", input);
+  // }, [input]);
 
   useEffect(() => {
     // Reset selected item when results change
@@ -68,7 +68,6 @@ const SearchItemInventory = ({ onItemHighlight, name }) => {
   const onItemSelect = (item) => {
     setInput(item.product);
     setShowResults(false);
-    console.log("item selected:", item);
 
     onItemHighlight(item);
     setInput("");

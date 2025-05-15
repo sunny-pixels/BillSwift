@@ -24,7 +24,6 @@ const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
         netamt,
       })
       .then((result) => {
-        console.log("item created:", result);
         // Pass the newly created item back to the parent component
         if (onItemAdded) {
           onItemAdded(result.data);
