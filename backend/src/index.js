@@ -6,6 +6,9 @@ import Item from "./models/item.model.js";
 
 import { connectDB } from "./lib/db.js";
 
+import authRoutes from "./routes/auth.route.js";
+
+
 const app = express();
 
 app.use(cors());
@@ -19,6 +22,8 @@ connectDB();
 
 // Routes
 // app.use("/api/items", itemRoutes)
+
+app.use("api/auth", authRoutes);
 
 app.get('/', (req, res) => {
     Item.find({})

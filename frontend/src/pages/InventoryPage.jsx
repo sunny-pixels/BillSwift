@@ -53,8 +53,8 @@ const InventoryPage = () => {
   // Function to refresh items
   const fetchItems = () => {
     axios
-      .get(`${BASE_URL}`)
-      // .get(`http://localhost:5001/`)
+      // .get(`${BASE_URL}`)
+      .get(`http://localhost:5001/`)
       .then((result) => {
         setItems(result.data);
         // Calculate total value
