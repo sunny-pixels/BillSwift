@@ -6,9 +6,9 @@ import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import AddItemsModal from "../components/AddItemsModal";
 import axios from "axios";
-import { FaPlus } from "react-icons/fa";
-import { LuArrowUpRight } from "react-icons/lu";
-const BASE_URL = import.meta.env.VITE_API_URL
+import { HiPlus } from "react-icons/hi2";
+import { HiArrowUpRight } from "react-icons/hi2";
+import { HiMoon, HiSun } from "react-icons/hi2";
 
 const InventoryPage = () => {
   const navigate = useNavigate();
@@ -16,10 +16,16 @@ const InventoryPage = () => {
   const [items, setItems] = useState([]);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
   const [totalValue, setTotalValue] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme ? savedTheme === "dark" : true; // Default to dark if no preference
+  });
 
-  // Function to calculate total value based on current items
-  const calculateTotalValue = (itemsArray) => {
-    return itemsArray.reduce((sum, item) => sum + (item.netamt || 0), 0);
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
+    document.body.style.backgroundColor = newTheme ? "#141416" : "#ffffff";
   };
 
   const handleAddClick = () => {
@@ -35,30 +41,28 @@ const InventoryPage = () => {
   };
 
   const handleItemAdded = (newItem) => {
-    const updatedItems = [...items, newItem];
-    setItems(updatedItems);
-    // Update total value when a new item is added
-    setTotalValue(calculateTotalValue(updatedItems));
+    setItems((prevItems) => [...prevItems, newItem]);
   };
 
   const handleHighlightRecord = (item) => {
     setHighlightedItemId(item.itemCode || item._id);
-
-    // Automatically clear the highlight after 3 seconds
     setTimeout(() => {
       setHighlightedItemId(null);
     }, 1500);
   };
 
-  // Function to refresh items
+  // Function to refresh items and calculate total value
   const fetchItems = () => {
     axios
-      // .get(`${BASE_URL}`)
-      .get(`http://localhost:5001/`)
+      .get("http://localhost:5001")
       .then((result) => {
         setItems(result.data);
         // Calculate total value
-        setTotalValue(calculateTotalValue(result.data));
+        const total = result.data.reduce(
+          (sum, item) => sum + (item.netamt || 0),
+          0
+        );
+        setTotalValue(total);
       })
       .catch((err) => console.log(err));
   };
@@ -67,72 +71,199 @@ const InventoryPage = () => {
     fetchItems();
   }, []);
 
-  // Function to update items and recalculate total value
-  const handleItemsChange = (updatedItems) => {
-    setItems(updatedItems);
-    setTotalValue(calculateTotalValue(updatedItems));
-  };
+  useEffect(() => {
+    // Set initial background color
+    document.body.style.backgroundColor = isDarkMode ? "#141416" : "#ffffff";
+  }, []);
+
+  // Add this useEffect to recalculate totalValue on items change
+  useEffect(() => {
+    const total = items.reduce((sum, item) => sum + (item.netamt || 0), 0);
+    setTotalValue(total);
+  }, [items]);
 
   return (
-    <div className="flex h-screen bg-[#141416]">
-      <SlideBar />
-      <div className="flex-1 flex flex-col p-6">
-        <div className="h-[120px] flex gap-8">
-          <div className="w-[23%] bg-[#0a66e5] border-none rounded-3xl p-4 text-white">
-            <div className="text-sm font-bold">Total Value</div>
-            <div className="text-4xl font-medium pt-2">
+    <div className={`flex p-6 ${isDarkMode ? "bg-[#141416]" : "bg-white"}`}>
+      <SlideBar isDarkMode={isDarkMode} />
+      <div className="flex-1 flex flex-col gap-6">
+        {/* Top Cards Row */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className={`p-6 rounded-[24px] bg-[#0a66e5]`}>
+            <div className="text-white text-sm mb-1 font-bold">Total Value</div>
+            <div className="text-white text-4xl font-medium">
               ₹{totalValue.toLocaleString()}
             </div>
           </div>
-          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
-            <div className="text-sm font-bold">Total Items</div>
-            <div className="text-4xl font-medium pt-2 text-white">
+          <div
+            className={`p-6 rounded-[24px] border-3 ${
+              isDarkMode
+                ? "bg-[#1A1A1C] border-[#1A1A1C]"
+                : "bg-white border-[#f4f4f6]"
+            }`}
+          >
+            <div className="text-[#767c8f] text-sm mb-1 font-bold">
+              Total Items
+            </div>
+            <div
+              className={`text-4xl font-medium ${
+                isDarkMode ? "text-white" : "text-[#141416]"
+              }`}
+            >
               {items.length}
             </div>
           </div>
-          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
-            <div className="text-sm font-bold">Low Stock Items</div>
-            <div className="text-4xl font-medium pt-2 text-white">
-              {items.filter((item) => (item.quantity || 0) < 3).length}
+          <div
+            className={`p-6 rounded-[24px] border-3 ${
+              isDarkMode
+                ? "bg-[#1A1A1C] border-[#1A1A1C]"
+                : "bg-white border-[#f4f4f6]"
+            }`}
+          >
+            <div className="text-[#767c8f] text-sm mb-1 font-bold">
+              Low Stock Items
+            </div>
+            <div
+              className={`text-4xl font-medium ${
+                isDarkMode ? "text-white" : "text-[#141416]"
+              }`}
+            >
+              {items.filter((item) => (item.quantity || 0) < 10).length}
             </div>
           </div>
-          <div className="w-[23%] bg-[#1A1A1C] border-none rounded-3xl p-4 text-[#767c8f]">
-            <div className="text-sm font-bold">Out of Stock</div>
-            <div className="text-4xl font-medium pt-2 text-white">
+          <div
+            className={`p-6 rounded-[24px] border-3 ${
+              isDarkMode
+                ? "bg-[#1A1A1C] border-[#1A1A1C]"
+                : "bg-white border-[#f4f4f6]"
+            }`}
+          >
+            <div className="text-[#767c8f] text-sm mb-1 font-bold">
+              Out of Stock
+            </div>
+            <div
+              className={`text-4xl font-medium ${
+                isDarkMode ? "text-white" : "text-[#141416]"
+              }`}
+            >
               {items.filter((item) => (item.quantity || 0) === 0).length}
             </div>
           </div>
         </div>
 
-        <div className=" bg-[#1A1A1C] mt-5 rounded-[20px] h-[400px]">
+        {/* Search and Title Section */}
+        <div
+          className={`p-6 rounded-[24px] border-3 ${
+            isDarkMode
+              ? "bg-[#1A1A1C] border-[#1A1A1C]"
+              : "bg-white border-[#f4f4f6]"
+          }`}
+        >
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-white pl-10 pt-4">
+            <h1
+              className={`text-2xl font-bold ${
+                isDarkMode ? "text-white" : "text-[#141416]"
+              }`}
+            >
               Inventory Management
             </h1>
-            <div className="relative w-1/2 mt-7 mr-7">
-              <SearchItemInventory
-                name="Search Product"
-                onItemHighlight={handleHighlightRecord}
-              />
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleTheme}
+                className={`p-2 rounded-full inline-flex items-center justify-center ${
+                  isDarkMode
+                    ? "bg-[#2a2a2d] text-white hover:bg-[#1A1A1C]"
+                    : "bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]"
+                }`}
+              >
+                {isDarkMode ? (
+                  <HiSun className="text-xl" />
+                ) : (
+                  <HiMoon className="text-xl" />
+                )}
+              </button>
+              <div className="relative w-[400px]">
+                <SearchItemInventory
+                  name="Search Product"
+                  onItemHighlight={handleHighlightRecord}
+                  className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 ${
+                    isDarkMode ? "bg-[#2a2a2d]" : "bg-[#f4f4f6]"
+                  }`}
+                  iconWrapperClassName={`px-3 py-3 rounded-full flex items-center justify-center ${
+                    isDarkMode ? "bg-[#facd40]" : "bg-[#facd40]"
+                  }`}
+                  iconClassName={
+                    isDarkMode
+                      ? "text-black text-base"
+                      : "text-[#141416] text-base"
+                  }
+                  placeholderClassName={`text-base font-medium ${
+                    isDarkMode ? "text-[#767c8f]" : "text-[#141416]"
+                  }`}
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <Table
-              items={items}
-              setItems={handleItemsChange} // Use the new handler
-              highlightedItemId={highlightedItemId}
-            />
+          {/* Table Section */}
+          <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
+            <div>
+              <Table
+                items={items}
+                setItems={setItems}
+                highlightedItemId={highlightedItemId}
+                className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
+                  isDarkMode
+                    ? "[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]"
+                    : "[&_td]:border-[#f4f4f6] [&_th]:border-[#f4f4f6]"
+                }`}
+                headerClassName={`font-medium ${
+                  isDarkMode
+                    ? "bg-[#1A1A1C] text-[#767c8f]"
+                    : "bg-white text-[#767c8f]"
+                }`}
+                rowClassName={`${
+                  isDarkMode
+                    ? "text-white hover:bg-[#2a2a2d]"
+                    : "text-[#141416] hover:bg-[#f4f4f6]"
+                }`}
+                highlightClassName={
+                  isDarkMode ? "bg-[#2a2a2d]" : "bg-[#f4f4f6]"
+                }
+                iconClassName={`transition-colors duration-150 ${
+                  isDarkMode
+                    ? "text-[#767c8f] hover:text-white"
+                    : "text-[#767c8f] hover:text-[#141416]"
+                }`}
+                cellClassName="px-6 py-4 rounded-none"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-7 mt-7">
-          <Button name="Add Item" onClick={handleAddClick} icon={<FaPlus />} />
-          <Button
-            name="Generate Bill"
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4">
+          <button
+            onClick={handleAddClick}
+            className={`px-4 py-2 font-medium rounded inline-flex items-center ${
+              isDarkMode
+                ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
+                : "bg-[#141416] hover:bg-[#2a2a2d] text-white"
+            }`}
+          >
+            <HiPlus className="text-lg mr-2 stroke-2" />
+            Add Item
+          </button>
+          <button
             onClick={handleGenerateBill}
-            icon={<LuArrowUpRight />}
-          />
+            className={`px-4 py-2 font-medium rounded inline-flex items-center ${
+              isDarkMode
+                ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
+                : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
+            }`}
+          >
+            <HiArrowUpRight className="text-lg mr-2 stroke-2" />
+            Generate Bill
+          </button>
         </div>
       </div>
 
@@ -140,11 +271,26 @@ const InventoryPage = () => {
         isOpen={showModal}
         onClose={handleCloseModal}
         onItemAdded={handleItemAdded}
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
-        modalClassName="bg-white rounded-xl shadow-xl p-6 w-full max-w-md"
-        headerClassName="text-[#006A71] font-bold text-xl mb-4"
-        inputClassName="w-full p-2 border border-[#9ACBD0] rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[#48A6A7]"
-        buttonClassName="px-4 py-2 bg-[#48A6A7] hover:bg-[#006A71] text-white font-medium rounded-lg transition duration-200 shadow-sm"
+        isDarkMode={isDarkMode}
+        overlayClassName="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 flex items-center justify-center"
+        modalClassName={`p-6 w-full max-w-3xl border rounded-[24px] shadow-xl ${
+          isDarkMode
+            ? "bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl"
+            : "bg-white/90 border-black/5 backdrop-blur-xl"
+        }`}
+        headerClassName={`font-bold text-xl ${
+          isDarkMode ? "text-white" : "text-[#141416]"
+        }`}
+        inputClassName={`w-full p-4 rounded-[16px] mb-4 focus:outline-none border transition-colors duration-200 ${
+          isDarkMode
+            ? "bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f] focus:border-[#3379E9]"
+            : "bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f] focus:border-[#3379E9]"
+        }`}
+        buttonClassName={`w-full p-4 font-medium rounded-[16px] transition-colors duration-200 ${
+          isDarkMode
+            ? "bg-[#3379E9] hover:bg-[#1466e4] text-white"
+            : "bg-[#3379E9] hover:bg-[#1466e4] text-white"
+        }`}
       />
     </div>
   );

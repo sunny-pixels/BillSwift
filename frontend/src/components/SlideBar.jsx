@@ -1,54 +1,55 @@
 import React from "react";
-import { useState } from "react";
-import {
-  FaGripLines,
-  FaHome,
-  FaFileAlt,
-  FaShoppingCart,
-  FaCog,
-} from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { HiHome, HiClipboardList, HiDocumentText } from "react-icons/hi";
 
-const SlideBar = () => {
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+const SlideBar = ({ isDarkMode }) => {
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
   return (
-    <div className="w-[5%] h-screen flex flex-col items-center justify-betwee text-[#767c8f] py-5">
-      <FaGripLines
-        className="text-xl cursor-pointer hover:text-blue-400 transition"
-        onClick={() => setIsOpen(!isOpen)}
-      />
-
-      <div
-        className="h-[300px] w-[50px] flex flex-col items-center justify-between py-5 transition-all duration-300"
-      >
-        <nav
-          className={`flex flex-col gap-10 mt-5 transition-opacity duration-300 ${
-            isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <FaHome
-            onClick={() => navigate("/")}
-            className="text-xl cursor-pointer hover:text-blue-400 transition"
-            title="Home"
-          />
-          <FaFileAlt
-            className="text-xl cursor-pointer hover:text-blue-400 transition"
-            title="Files"
-          />
-          <FaShoppingCart
-            className="text-xl cursor-pointer hover:text-blue-400 transition"
-            title="Cart"
-          />
-          <FaCog
-            className="text-xl cursor-pointer hover:text-blue-400 transition"
-            title="Settings"
-          />
-        </nav>
-      </div>
-
-      {/* <img src="/bs_logo.png" alt="BillSwift Logo" className="w-15 h-15" /> */}
+    <div className={`w-20 flex flex-col items-center pt-0 pb-8 ${isDarkMode ? 'bg-[#141416]' : 'bg-white'}`}>
+      <Link to="/">
+        <div className={`p-3 rounded-xl mb-8 ${
+          isActive("/")
+            ? isDarkMode 
+              ? 'bg-[#1A1A1C] text-white' 
+              : 'bg-[#f4f4f6] text-[#141416]'
+            : isDarkMode
+              ? 'text-[#767c8f] hover:text-white hover:bg-[#1A1A1C]'
+              : 'text-[#767c8f] hover:text-[#141416] hover:bg-[#f4f4f6]'
+        }`}>
+          <HiHome className="text-2xl" />
+        </div>
+      </Link>
+      <Link to="/inventory">
+        <div className={`p-3 rounded-xl mb-8 ${
+          isActive("/inventory")
+            ? isDarkMode 
+              ? 'bg-[#1A1A1C] text-white' 
+              : 'bg-[#f4f4f6] text-[#141416]'
+            : isDarkMode
+              ? 'text-[#767c8f] hover:text-white hover:bg-[#1A1A1C]'
+              : 'text-[#767c8f] hover:text-[#141416] hover:bg-[#f4f4f6]'
+        }`}>
+          <HiClipboardList className="text-2xl" />
+        </div>
+      </Link>
+      <Link to="/bill">
+        <div className={`p-3 rounded-xl ${
+          isActive("/bill")
+            ? isDarkMode 
+              ? 'bg-[#1A1A1C] text-white' 
+              : 'bg-[#f4f4f6] text-[#141416]'
+            : isDarkMode
+              ? 'text-[#767c8f] hover:text-white hover:bg-[#1A1A1C]'
+              : 'text-[#767c8f] hover:text-[#141416] hover:bg-[#f4f4f6]'
+        }`}>
+          <HiDocumentText className="text-2xl" />
+        </div>
+      </Link>
     </div>
   );
 };

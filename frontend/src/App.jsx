@@ -1,5 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import HomePage from "./pages/HomePage";
 import BillPage from "./pages/BillPage";
@@ -8,6 +9,7 @@ import InventoryPage from "./pages/InventoryPage";
 const App = () => {
   return (
     <div>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<HomePage />} /> 
         <Route path="/bill" element={<BillPage />} /> 

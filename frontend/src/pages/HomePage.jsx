@@ -28,14 +28,14 @@ const HomePage = () => {
         
         <div className="flex flex-col space-y-4">
           <button
-            className="w-full py-3 px-6 border rounded-3xl bg-[#0a66e5] hover:bg-[#0952b7] text-white font-medium"
+            className="w-full py-3 px-6 bg-[#0a66e5] hover:bg-[#0952b7] text-white font-medium"
             onClick={() => navigate("/inventory")}
           >
             Manage Inventory
           </button>
           
           <button
-            className="w-full py-3 px-6 border-none rounded-3xl bg-[#facd40] hover:bg-[#e5b832] text-[#141416] font-medium transition duration-300"
+            className="w-full py-3 px-6 bg-[#facd40] hover:bg-[#e5b832] text-[#141416] font-medium rounded transition duration-300"
             onClick={() => navigate("/dashboard")}
           >
             Go to Dashboard

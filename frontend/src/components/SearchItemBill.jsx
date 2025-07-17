@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
-const BASE_URL = import.meta.env.VITE_API_URL;
+import toast from "react-hot-toast";
 
-const SearchItemBill = ({ onItemSelect, name, className }) => {
+const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrapperClassName, placeholderClassName }) => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(true);
   const [selectedItem, setSelectedItem] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
   const resultsRef = useRef(null);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
     }
   }, [selectedItem]);
 
-  const fetchData = (value) => {
+  const fetchData = async (value) => {
     if (!value.trim()) {
       setResults([]);
       return;
@@ -39,19 +40,25 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
 
     // Only search if the input doesn't have the format "product - quantity - price"
     if (!value.includes(" - ")) {
-      fetch(`${BASE_URL}`)
-        .then((res) => res.json())
-        .then((data) => {
-          const filteredResults = data.filter((item) => {
-            return (
-              item &&
-              item.product &&
-              item.product.toLowerCase().includes(value.toLowerCase())
-            );
-          });
-          setResults(filteredResults);
-          setShowResults(true);
+      setIsLoading(true);
+      try {
+        const response = await fetch("http://localhost:5001/");
+        if (!response.ok) {
+          throw new Error('Failed to fetch items');
+        }
+        const data = await response.json();
+        const filteredResults = data.filter((item) => {
+          return item && item.product && item.product.toLowerCase().includes(value.toLowerCase());
         });
+        setResults(filteredResults);
+        setShowResults(true);
+      } catch (error) {
+        console.error('Error fetching items:', error);
+        toast.error('Failed to fetch items. Please try again.');
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       setResults([]);
       setShowResults(false);
@@ -64,12 +71,27 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
   };
 
   const handleResultClick = (result) => {
-    // Set the formatted input
-    const formattedInput = `${result.product} - ${result.quantity || 1} - ${
-      result.mrp || 0
-    }`;
-    setInput(formattedInput);
-    setShowResults(false);
+    try {
+      // Create item object
+      const item = {
+        product: result.product,
+        quantity: result.quantity || 1,
+        mrp: result.mrp || 0,
+        itemCode: result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
+        netamt: (result.quantity || 1) * (result.mrp || 0)
+      };
+      
+      // Add item to table
+      onItemSelect(item);
+      
+      // Clear input after adding
+      setInput("");
+      setShowResults(false);
+      toast.success('Item added successfully!');
+    } catch (error) {
+      console.error('Error adding item:', error);
+      toast.error('Failed to add item. Please try again.');
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -78,23 +100,31 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
       if (input.includes(" - ")) {
         const parts = input.split(" - ");
         if (parts.length === 3) {
-          const product = parts[0];
-          const quantity = parseInt(parts[1], 10) || 1;
-          const mrp = parseFloat(parts[2]) || 0;
-
-          // Create item object
-          const item = {
-            product: product,
-            quantity: quantity,
-            mrp: mrp,
-            itemCode: "MANUAL-" + Date.now().toString().slice(-6),
-          };
-
-          // Add item to table
-          onItemSelect(item);
-
-          // Clear input after adding
-          setInput("");
+          try {
+            const product = parts[0];
+            const quantity = parseInt(parts[1], 10) || 1;
+            const mrp = parseFloat(parts[2]) || 0;
+            
+            // Create item object
+            const item = {
+              product: product,
+              quantity: quantity,
+              mrp: mrp,
+              itemCode: "MANUAL-" + Date.now().toString().slice(-6),
+              netamt: quantity * mrp
+            };
+            
+            // Add item to table
+            onItemSelect(item);
+            
+            // Clear input after adding
+            setInput("");
+            setShowResults(false);
+            toast.success('Item added successfully!');
+          } catch (error) {
+            console.error('Error adding manual item:', error);
+            toast.error('Failed to add item. Please check the format.');
+          }
         }
       } else if (results.length > 0 && selectedItem >= 0) {
         const selectedResult = results[selectedItem];
@@ -114,54 +144,55 @@ const SearchItemBill = ({ onItemSelect, name, className }) => {
   };
 
   return (
-    <div className="relative w-[85%] ml-20 flex justify-center">
-      <div
-        className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 bg-[#2a2a2d]`}
-      >
-        <div className="px-3 py-3 rounded-full flex items-center justify-center bg-[#facd40]">
-          <FaSearch className="text-black text-base" />
+    <div className="relative w-full">
+      <div className={className}>
+        <div className={iconWrapperClassName}>
+          <FaSearch className={iconClassName} />
         </div>
         <input
           type="text"
           placeholder={name}
-          className="outline-none bg-transparent w-full text-[15px] text-white placeholder-gray-400"
+          className={`outline-none bg-transparent w-full placeholder:${placeholderClassName}`}
           value={input}
           onChange={(e) => handleChange(e.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             if (input.trim() && results.length > 0 && !input.includes(" - ")) {
               setShowResults(true);
             }
           }}
-          onKeyDown={handleKeyDown}
         />
       </div>
 
       {/* Search Results */}
-      {showResults &&
-        results.length > 0 &&
-        input.trim() !== "" &&
-        !input.includes(" - ") && (
-          <div
-            ref={resultsRef}
-            className="absolute top-[45px] w-full bg-[#2a2a2d] border rounded-lg flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide"
-          >
-            {results.map((result, index) => (
+      {showResults && input.trim() !== "" && !input.includes(" - ") && (
+        <div 
+          ref={resultsRef}
+          className="absolute top-[60px] w-full bg-white rounded-[24px] flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide border border-[#f4f4f6]"
+        >
+          {isLoading ? (
+            <div className="p-3 text-[#767c8f] text-center">Loading...</div>
+          ) : results.length > 0 ? (
+            results.map((result, index) => (
               <div
                 key={result._id || result.itemCode}
                 onClick={() => handleResultClick(result)}
                 role="button"
                 tabIndex={0}
                 className={
-                  selectedItem === index
-                    ? "p-3 bg-[#767c8f] text-white font-medium text-[13px] cursor-pointer focus:outline-none"
-                    : "p-3 hover:bg-[#767c8f] text-white font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#F2EFE7] transition-colors duration-150"
+                  selectedItem === index 
+                    ? "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none" 
+                    : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#f4f4f6] transition-colors duration-150"
                 }
               >
                 {result?.product || "No Item Code"}
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="p-3 text-[#767c8f] text-center">No items found</div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

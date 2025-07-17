@@ -1,102 +1,142 @@
 import React, { useState } from "react";
 import axios from "axios";
-const BASE_URL = import.meta.env.VITE_API_URL
+import toast from "react-hot-toast";
 
-
-
-const AddItemsModal = ({ isOpen, onClose, onItemAdded }) => {
+const AddItemsModal = ({
+  isOpen,
+  onClose,
+  onItemAdded,
+  isDarkMode,
+  overlayClassName,
+  modalClassName,
+  headerClassName,
+  inputClassName,
+  buttonClassName,
+}) => {
   const [itemCode, setItemCode] = useState("");
   const [quantity, setQuantity] = useState("");
   const [product, setProduct] = useState("");
   const [mrp, setMrp] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const resetForm = () => {
+    setItemCode("");
+    setQuantity("");
+    setProduct("");
+    setMrp("");
+    setIsSubmitting(false);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const netamt = Number(quantity) * Number(mrp);
+    if (isSubmitting) return;
 
-    axios
-      .post(`${BASE_URL}/createItem`, {
+    try {
+      setIsSubmitting(true);
+
+      const netamt = Number(quantity) * Number(mrp);
+
+      const response = await axios.post("http://localhost:5001/createItem", {
         itemCode,
         product,
         quantity: Number(quantity),
         mrp: Number(mrp),
         netamt,
-      })
-      .then((result) => {
-        // Pass the newly created item back to the parent component
-        if (onItemAdded) {
-          onItemAdded(result.data);
-        }
+      });
 
-        // Clear the form
-        setItemCode("");
-        setQuantity("");
-        setProduct("");
-        setMrp("");
+      // Pass the newly created item back to the parent component
+      if (onItemAdded) {
+        onItemAdded(response.data);
+      }
 
-        // Close the modal
-        onClose();
-      })
-      .catch((err) => console.log(err));
+      toast.success("Item added successfully!");
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to add item. Please try again."
+      );
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
 
+  const inputBaseClassName = `w-full p-4 rounded-[16px] mb-4 focus:outline-none border transition-colors duration-200 ${
+    isDarkMode
+      ? "bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f] focus:border-[#3379E9]"
+      : "bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f] focus:border-[#3379E9]"
+  }`;
+
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center text-[15px] z-20">
-      <div className="bg-[#202124] p-6 rounded-lg shadow-lg w-[500px] flex flex-col gap-5">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">Add Your Item</h2>
+    <div className={overlayClassName}>
+      <div className={modalClassName}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className={headerClassName}>Add Your Item</h2>
           <button
-            className="text-white hover:text-[#9594a0] text-3xl"
-            onClick={onClose}
+            className="text-inherit opacity-60 hover:opacity-100 text-3xl transition-opacity"
+            onClick={() => {
+              resetForm();
+              onClose();
+            }}
             type="button"
           >
             ×
           </button>
         </div>
 
-        <form className="flex flex-col" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-5">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-4">
             <input
-              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
+              className={inputBaseClassName}
               type="text"
               placeholder="Enter ItemCode"
               value={itemCode}
               onChange={(e) => setItemCode(e.target.value)}
               required
+              disabled={isSubmitting}
             />
             <input
-              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
+              className={inputBaseClassName}
               type="text"
               placeholder="Enter Product"
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               required
+              disabled={isSubmitting}
             />
             <input
-              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
+              className={inputBaseClassName}
               type="number"
               placeholder="Enter Quantity"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               required
+              min="0"
+              disabled={isSubmitting}
             />
             <input
-              className="border p-3 text-white focus-within:ring-1 outline-none rounded-lg"
+              className={inputBaseClassName}
               type="number"
               placeholder="Enter Mrp"
               value={mrp}
               onChange={(e) => setMrp(e.target.value)}
               required
+              min="0"
+              step="0.01"
+              disabled={isSubmitting}
             />
           </div>
           <button
             type="submit"
-            className="bg-[#0a66e5] hover:bg-[#9594a0] text-white font-bold py-2 px-4 mt-7 rounded self-end"
+            className={`${buttonClassName} ${
+              isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+            }`}
+            disabled={isSubmitting}
           >
-            Save
+            {isSubmitting ? "Saving..." : "Save"}
           </button>
         </form>
       </div>

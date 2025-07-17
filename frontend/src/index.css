@@ -1,1 +1,64 @@
 @import "tailwindcss";
+@import "./fonts.css";
+
+@layer base {
+    :root {
+        font-family: 'TT Hoves Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    html, body {
+        font-family: 'TT Hoves Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+    
+    * {
+        font-family: inherit;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    /* Remove focus outlines but maintain accessibility */
+    *:focus {
+        outline: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove shadows from specific Tailwind classes */
+    .shadow,
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl,
+    .shadow-2xl,
+    [class*="shadow"] {
+        box-shadow: none !important;
+    }
+}
+
+@layer components {
+    /* Apply rounded corners to common interactive elements */
+    button,
+    input,
+    select,
+    textarea,
+    .rounded-lg,
+    .shadow-lg,
+    .bg-white,
+    .border,
+    /* Ensure modal and card components get the radius */
+    div[role="dialog"],
+    .modal,
+    .card,
+    .bg-\[\#F2EFE7\],
+    .bg-\[\#ecebe8\],
+    /* Table specific rounded corners */
+    table,
+    th,
+    td,
+    /* Search and input containers */
+    .search-container,
+    .input-container {
+        border-radius: 24px !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+}
