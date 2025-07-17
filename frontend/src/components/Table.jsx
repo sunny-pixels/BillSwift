@@ -146,11 +146,24 @@ const Table = ({
         </table>
       </div>
 
+      {/* <EditItemsModal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        itemId={selectedItemId}
+        onItemUpdated={handleItemUpdated}
+      /> */}
+
       <EditItemsModal
         isOpen={showEditModal}
         onClose={handleCloseEditModal}
         itemId={selectedItemId}
         onItemUpdated={handleItemUpdated}
+        isDarkMode={true} // or pass your actual dark mode state
+        overlayClassName="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+        modalClassName="bg-[#2a2a2d]/80 p-8 rounded-[24px] shadow-lg w-[500px] flex flex-col"
+        headerClassName="text-2xl font-bold text-white"
+        inputBaseClassName="w-full p-4 rounded-[16px] mb-4 focus:outline-none border transition-colors duration-200 bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f] focus:border-[#3379E9]"
+        buttonClassName="w-full p-4 rounded-[16px] bg-[#3379E9] text-white font-semibold transition-colors duration-200 hover:bg-[#225bb5] mt-2"
       />
 
       <style>
