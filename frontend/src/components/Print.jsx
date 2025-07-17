@@ -7,7 +7,8 @@ const Print = () => {
   useEffect(() => {
     const fetchNetamt = async () => {
       try {
-        const res = await fetch("http://localhost:5001/api/netamt");
+        const API_URL = import.meta.env.VITE_API_URL;
+        const res = await fetch(`${API_URL}/api/netamt`);
         const data = await res.json();
         // Set the data directly since it's already an array
         setItems(data);

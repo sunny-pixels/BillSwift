@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 
-const SearchItemInventory = ({ 
-  onItemHighlight, 
-  name, 
-  className, 
-  iconClassName, 
+const SearchItemInventory = ({
+  onItemHighlight,
+  name,
+  className,
+  iconClassName,
   iconWrapperClassName,
-  placeholderClassName 
+  placeholderClassName,
 }) => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
@@ -47,7 +47,8 @@ const SearchItemInventory = ({
 
     // handling the non empty values -> filtered the result as per the input
     if (value.trim()) {
-      fetch("http://localhost:5001/")
+      const API_URL = import.meta.env.VITE_API_URL;
+      fetch(API_URL)
         .then((res) => res.json())
         .then((data) => {
           const filteredResults = data.filter((item) => {

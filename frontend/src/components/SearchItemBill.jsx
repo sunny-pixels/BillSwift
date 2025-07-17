@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrapperClassName, placeholderClassName }) => {
+const SearchItemBill = ({
+  onItemSelect,
+  name,
+  className,
+  iconClassName,
+  iconWrapperClassName,
+  placeholderClassName,
+}) => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(true);
@@ -32,6 +39,8 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
     }
   }, [selectedItem]);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const fetchData = async (value) => {
     if (!value.trim()) {
       setResults([]);
@@ -42,19 +51,23 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
     if (!value.includes(" - ")) {
       setIsLoading(true);
       try {
-        const response = await fetch("http://localhost:5001/");
+        const response = await fetch(API_URL);
         if (!response.ok) {
-          throw new Error('Failed to fetch items');
+          throw new Error("Failed to fetch items");
         }
         const data = await response.json();
         const filteredResults = data.filter((item) => {
-          return item && item.product && item.product.toLowerCase().includes(value.toLowerCase());
+          return (
+            item &&
+            item.product &&
+            item.product.toLowerCase().includes(value.toLowerCase())
+          );
         });
         setResults(filteredResults);
         setShowResults(true);
       } catch (error) {
-        console.error('Error fetching items:', error);
-        toast.error('Failed to fetch items. Please try again.');
+        console.error("Error fetching items:", error);
+        toast.error("Failed to fetch items. Please try again.");
         setResults([]);
       } finally {
         setIsLoading(false);
@@ -77,20 +90,21 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
         product: result.product,
         quantity: result.quantity || 1,
         mrp: result.mrp || 0,
-        itemCode: result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
-        netamt: (result.quantity || 1) * (result.mrp || 0)
+        itemCode:
+          result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
+        netamt: (result.quantity || 1) * (result.mrp || 0),
       };
-      
+
       // Add item to table
       onItemSelect(item);
-      
+
       // Clear input after adding
       setInput("");
       setShowResults(false);
-      toast.success('Item added successfully!');
+      toast.success("Item added successfully!");
     } catch (error) {
-      console.error('Error adding item:', error);
-      toast.error('Failed to add item. Please try again.');
+      console.error("Error adding item:", error);
+      toast.error("Failed to add item. Please try again.");
     }
   };
 
@@ -104,26 +118,26 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
             const product = parts[0];
             const quantity = parseInt(parts[1], 10) || 1;
             const mrp = parseFloat(parts[2]) || 0;
-            
+
             // Create item object
             const item = {
               product: product,
               quantity: quantity,
               mrp: mrp,
               itemCode: "MANUAL-" + Date.now().toString().slice(-6),
-              netamt: quantity * mrp
+              netamt: quantity * mrp,
             };
-            
+
             // Add item to table
             onItemSelect(item);
-            
+
             // Clear input after adding
             setInput("");
             setShowResults(false);
-            toast.success('Item added successfully!');
+            toast.success("Item added successfully!");
           } catch (error) {
-            console.error('Error adding manual item:', error);
-            toast.error('Failed to add item. Please check the format.');
+            console.error("Error adding manual item:", error);
+            toast.error("Failed to add item. Please check the format.");
           }
         }
       } else if (results.length > 0 && selectedItem >= 0) {
@@ -166,7 +180,7 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
 
       {/* Search Results */}
       {showResults && input.trim() !== "" && !input.includes(" - ") && (
-        <div 
+        <div
           ref={resultsRef}
           className="absolute top-[60px] w-full bg-white rounded-[24px] flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide border border-[#f4f4f6]"
         >
@@ -180,8 +194,8 @@ const SearchItemBill = ({ onItemSelect, name, className, iconClassName, iconWrap
                 role="button"
                 tabIndex={0}
                 className={
-                  selectedItem === index 
-                    ? "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none" 
+                  selectedItem === index
+                    ? "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none"
                     : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#f4f4f6] transition-colors duration-150"
                 }
               >

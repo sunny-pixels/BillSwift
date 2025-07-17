@@ -1,5 +1,5 @@
 // WhatsApp service that communicates with our server
-const SERVER_URL = 'http://localhost:5002';
+const SERVER_URL = import.meta.env.VITE_API_URL;
 
 // Function to check WhatsApp connection status and get QR code if needed
 const checkWhatsAppStatus = async () => {
@@ -8,8 +8,8 @@ const checkWhatsAppStatus = async () => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error checking WhatsApp status:', error);
-    return { status: 'error', error: 'Failed to connect to WhatsApp server' };
+    console.error("Error checking WhatsApp status:", error);
+    return { status: "error", error: "Failed to connect to WhatsApp server" };
   }
 };
 
@@ -17,16 +17,16 @@ const checkWhatsAppStatus = async () => {
 const clearSession = async () => {
   try {
     const response = await fetch(`${SERVER_URL}/api/whatsapp/clear-session`, {
-      method: 'POST',
+      method: "POST",
     });
-    
+
     if (!response.ok) {
-      throw new Error('Failed to clear session');
+      throw new Error("Failed to clear session");
     }
-    
+
     return true;
   } catch (error) {
-    console.error('Error clearing WhatsApp session:', error);
+    console.error("Error clearing WhatsApp session:", error);
     return false;
   }
 };
@@ -35,21 +35,21 @@ const clearSession = async () => {
 const sendWhatsAppMessage = async (phoneNumber, message, pdfBuffer) => {
   try {
     // Format the phone number (remove any spaces or special characters)
-    const formattedNumber = phoneNumber.replace(/\D/g, '');
-    
+    const formattedNumber = phoneNumber.replace(/\D/g, "");
+
     // Convert PDF buffer to base64
     const pdfBase64 = btoa(
       new Uint8Array(pdfBuffer).reduce(
         (data, byte) => data + String.fromCharCode(byte),
-        ''
+        ""
       )
     );
-    
+
     // Send message to our server
     const response = await fetch(`${SERVER_URL}/api/whatsapp/send`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         phoneNumber: formattedNumber,
@@ -57,18 +57,18 @@ const sendWhatsAppMessage = async (phoneNumber, message, pdfBuffer) => {
         pdfBase64,
       }),
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to send message');
+      throw new Error(data.error || "Failed to send message");
     }
-    
+
     return true;
   } catch (error) {
-    console.error('Error sending WhatsApp message:', error);
+    console.error("Error sending WhatsApp message:", error);
     return false;
   }
 };
 
-export { checkWhatsAppStatus, sendWhatsAppMessage, clearSession }; 
+export { checkWhatsAppStatus, sendWhatsAppMessage, clearSession };

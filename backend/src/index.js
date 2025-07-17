@@ -21,30 +21,30 @@ connectDB();
 // Routes
 // app.use("/api/items", itemRoutes)
 
-app.get('/', (req, res) => {
-    Item.find({})
-    .then(items => res.json(items))
-    .catch(err => console.log(err))
-})
+app.get("/", (req, res) => {
+  Item.find({})
+    .then((items) => res.json(items))
+    .catch((err) => console.log(err));
+});
 
-app.get('/getItem/:id', (req, res) => {
+app.get("/getItem/:id", (req, res) => {
   const id = req.params.id;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid ObjectId" });
   }
   Item.findById(id)
-    .then(item => res.json(item))
-    .catch(err => res.status(500).json(err));
+    .then((item) => res.json(item))
+    .catch((err) => res.status(500).json(err));
 });
 
-app.put('/updateItem/:id', (req, res) => {
+app.put("/updateItem/:id", (req, res) => {
   const id = req.params.id;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid ObjectId" });
   }
   Item.findByIdAndUpdate(id, req.body, { new: true })
-    .then(updatedItem => res.json(updatedItem))
-    .catch(err => {
+    .then((updatedItem) => res.json(updatedItem))
+    .catch((err) => {
       console.log(err);
       res.status(500).json(err);
     });
@@ -56,14 +56,14 @@ app.post("/createItem", (req, res) => {
     .catch((err) => res.json(err));
 });
 
-app.delete('/deleteItem/:id', (req, res) => {
+app.delete("/deleteItem/:id", (req, res) => {
   const id = req.params.id;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: "Invalid ObjectId" });
   }
   Item.findByIdAndDelete(id)
-    .then(result => res.json(result))
-    .catch(err => {
+    .then((result) => res.json(result))
+    .catch((err) => {
       console.log(err);
       res.status(500).json(err);
     });
@@ -71,5 +71,5 @@ app.delete('/deleteItem/:id', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-//   connectDB();
+  //   connectDB();
 });

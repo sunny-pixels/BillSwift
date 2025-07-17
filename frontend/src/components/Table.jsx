@@ -3,6 +3,7 @@ import { HiPencilAlt } from "react-icons/hi";
 import { MdDelete } from "react-icons/md";
 import EditItemsModal from "./EditItemsModal";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Table = ({
   items,
@@ -30,7 +31,7 @@ const Table = ({
 
   const handleDeleteClick = (itemId) => {
     axios
-      .delete(`http://localhost:5001/deleteItem/${itemId}`)
+      .delete(`${API_URL}/deleteItem/${itemId}`)
       .then(() => {
         setItems(items.filter((item) => item._id !== itemId));
       })

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import SlideBar from "../components/SlideBar";
 import SearchItemInventory from "../components/SearchItemInventory";
 import Table from "../components/Table";
-import Button from "../components/Button";
 import { useNavigate } from "react-router-dom";
 import AddItemsModal from "../components/AddItemsModal";
 import axios from "axios";
@@ -53,18 +52,34 @@ const InventoryPage = () => {
 
   // Function to refresh items and calculate total value
   const fetchItems = () => {
+    let apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      alert(
+        "VITE_API_URL is not set. Please check your environment variables."
+      );
+      setItems([]);
+      setTotalValue(0);
+      return;
+    }
+    // Ensure the URL does not have a trailing slash for consistency
+    if (apiUrl.endsWith("/")) apiUrl = apiUrl.slice(0, -1);
     axios
-      .get("http://localhost:5001")
+      .get(apiUrl)
       .then((result) => {
-        setItems(result.data);
+        // Ensure result.data is an array
+        const data = Array.isArray(result.data) ? result.data : [];
+        setItems(data);
         // Calculate total value
-        const total = result.data.reduce(
-          (sum, item) => sum + (item.netamt || 0),
-          0
-        );
+        const total = data.reduce((sum, item) => sum + (item.netamt || 0), 0);
         setTotalValue(total);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        setItems([]);
+        setTotalValue(0);
+        alert(
+          "Failed to fetch inventory items. Please check your backend connection."
+        );
+      });
   };
 
   useEffect(() => {

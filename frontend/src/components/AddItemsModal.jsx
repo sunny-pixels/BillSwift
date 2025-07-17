@@ -37,13 +37,16 @@ const AddItemsModal = ({
 
       const netamt = Number(quantity) * Number(mrp);
 
-      const response = await axios.post("http://localhost:5001/createItem", {
-        itemCode,
-        product,
-        quantity: Number(quantity),
-        mrp: Number(mrp),
-        netamt,
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/createItem`,
+        {
+          itemCode,
+          product,
+          quantity: Number(quantity),
+          mrp: Number(mrp),
+          netamt,
+        }
+      );
 
       // Pass the newly created item back to the parent component
       if (onItemAdded) {
