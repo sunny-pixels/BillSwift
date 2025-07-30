@@ -1,5 +1,5 @@
 // WhatsApp service that communicates with our WhatsApp server
-const WHATSAPP_SERVER_URL = 'http://localhost:5002'; // Change this to your WhatsApp server URL if different
+const WHATSAPP_SERVER_URL = 'https://whatsappserverbillswift.onrender.com'; // Change this to your WhatsApp server URL if different
 
 // Function to check WhatsApp connection status and get QR code if needed
 const checkWhatsAppStatus = async () => {
