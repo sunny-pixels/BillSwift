@@ -1,10 +1,10 @@
-// WhatsApp service that communicates with our server
-const SERVER_URL = import.meta.env.VITE_API_URL;
+// WhatsApp service that communicates with our WhatsApp server
+const WHATSAPP_SERVER_URL = 'http://localhost:5002'; // Change this to your WhatsApp server URL if different
 
 // Function to check WhatsApp connection status and get QR code if needed
 const checkWhatsAppStatus = async () => {
   try {
-    const response = await fetch(`${SERVER_URL}/api/whatsapp/qr`);
+    const response = await fetch(`${WHATSAPP_SERVER_URL}/api/whatsapp/qr`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -16,14 +16,12 @@ const checkWhatsAppStatus = async () => {
 // Function to clear WhatsApp session
 const clearSession = async () => {
   try {
-    const response = await fetch(`${SERVER_URL}/api/whatsapp/clear-session`, {
+    const response = await fetch(`${WHATSAPP_SERVER_URL}/api/whatsapp/clear-session`, {
       method: "POST",
     });
-
     if (!response.ok) {
       throw new Error("Failed to clear session");
     }
-
     return true;
   } catch (error) {
     console.error("Error clearing WhatsApp session:", error);
@@ -46,7 +44,7 @@ const sendWhatsAppMessage = async (phoneNumber, message, pdfBuffer) => {
     );
 
     // Send message to our server
-    const response = await fetch(`${SERVER_URL}/api/whatsapp/send`, {
+    const response = await fetch(`${WHATSAPP_SERVER_URL}/api/whatsapp/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

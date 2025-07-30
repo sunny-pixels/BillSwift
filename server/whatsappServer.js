@@ -63,6 +63,13 @@ const initializeWhatsApp = async (forceNew = false) => {
         qrCode = qr;
         qrcode.generate(qr, { small: true });
         console.log('New QR code generated. Please scan with WhatsApp.');
+        // Print the endpoint URL
+        const endpoint = `/api/whatsapp/qr`;
+        if (process.env.HOST && process.env.PORT) {
+          console.log(`QR API endpoint: http://${process.env.HOST}:${process.env.PORT}${endpoint}`);
+        } else {
+          console.log(`QR API endpoint: ${endpoint}`);
+        }
       }
       
       if (connection === 'close') {
@@ -109,12 +116,17 @@ initializeWhatsApp(true); // Force new session on server start
 
 // API endpoint to get QR code
 app.get('/api/whatsapp/qr', (req, res) => {
+  const endpoint = '/api/whatsapp/qr';
+  let endpointUrl = endpoint;
+  if (req.hostname && req.socket && req.socket.localPort) {
+    endpointUrl = `http://${req.hostname}:${req.socket.localPort}${endpoint}`;
+  }
   if (qrCode) {
-    res.json({ qr: qrCode });
+    res.json({ qr: qrCode, endpoint: endpointUrl });
   } else if (isConnected) {
-    res.json({ status: 'connected' });
+    res.json({ status: 'connected', endpoint: endpointUrl });
   } else {
-    res.json({ status: 'waiting' });
+    res.json({ status: 'waiting', endpoint: endpointUrl });
   }
 });
 
