@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import SlideBar from "../components/SlideBar";
@@ -14,6 +14,7 @@ import { HiSun, HiMoon } from "react-icons/hi2";
 
 const BillPage = () => {
   const [items, setItems] = useState([]);
+  const itemsRef = useRef([]);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [pdfBuffer, setPdfBuffer] = useState(null);
@@ -23,6 +24,21 @@ const BillPage = () => {
     return savedTheme ? savedTheme === 'dark' : true; // Default to dark if no preference
   });
 
+  const printButtonRef = useRef(null);
+
+  const triggerPrintWithAnimation = () => {
+    const button = printButtonRef.current;
+    if (button) {
+      button.style.transform = 'translateX(calc(118px - 100%))';
+      setTimeout(() => {
+        generatePDF();
+        button.style.transform = 'translateX(0)';
+      }, 500);
+    } else {
+      generatePDF();
+    }
+  };
+
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
@@ -31,9 +47,13 @@ const BillPage = () => {
   };
 
   useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
     // Set initial background color
     document.body.style.backgroundColor = isDarkMode ? '#141416' : '#ffffff';
-  }, []);
+  }, [items]);
 
   // Check WhatsApp connection status on component mount
   useEffect(() => {
@@ -68,8 +88,9 @@ const BillPage = () => {
 
   // PDF Generation Function
   const generatePDF = () => {
+    const currentItems = itemsRef.current || [];
     // Check if there are items to generate PDF
-    if (items.length === 0) {
+    if (currentItems.length === 0) {
       toast.error("No items available to generate PDF");
       return;
     }
@@ -103,20 +124,18 @@ const BillPage = () => {
     });
 
     // Calculate total
-    const total = items.reduce((sum, item) => sum + (item?.netamt || 0), 0);
+    const total = currentItems.reduce((sum, item) => sum + (item?.netamt || 0), 0);
 
-    // Prepare table data
+    // Prepare table data (hide Item Code)
     const tableColumn = [
       "No",
-      "Item Code",
       "Product",
       "Quantity",
       "MRP",
       "Net Amount",
     ];
-    const tableRows = items.map((item, index) => [
+    const tableRows = currentItems.map((item, index) => [
       index + 1,
-      item.itemCode || "N/A",
       item.product || "N/A",
       item.quantity || "0",
       (item.mrp || 0).toLocaleString(),
@@ -144,11 +163,10 @@ const BillPage = () => {
       },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 30, halign: "right" },
-        5: { cellWidth: 45, halign: "right" },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 30, halign: "right" },
+        4: { cellWidth: 45, halign: "right" },
       },
     });
 
@@ -186,6 +204,18 @@ const BillPage = () => {
       setShowQRModal(true);
     }
   };
+
+  // Ctrl+Enter hotkey to print bill (with animation) - keep latest items via deps
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.ctrlKey && (e.key === "Enter" || e.code === "Enter")) {
+        e.preventDefault();
+        triggerPrintWithAnimation();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [items]);
 
   const handlePhoneSubmit = async (phoneNumber) => {
     try {
@@ -277,7 +307,8 @@ const BillPage = () => {
               </button>
               <div className="relative w-[400px]">
                 <SearchItemBill 
-                  onItemSelect={addItem} 
+                  onItemSelect={addItem}
+                  onCtrlEnterPrint={triggerPrintWithAnimation}
                   name="Add Products"
                   className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 ${
                     isDarkMode ? 'bg-[#2a2a2d]' : 'bg-[#f4f4f6]'
@@ -352,14 +383,8 @@ const BillPage = () => {
                     <span className="text-white/50 text-sm ml-8">Print</span>
                   </div>
                   <button
-                    onClick={(e) => {
-                      const button = e.currentTarget;
-                      button.style.transform = 'translateX(calc(118px - 100%))';
-                      setTimeout(() => {
-                        generatePDF();
-                        button.style.transform = 'translateX(0)';
-                      }, 500);
-                    }}
+                    ref={printButtonRef}
+                    onClick={triggerPrintWithAnimation}
                     className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -406,6 +431,7 @@ const BillPage = () => {
             : 'bg-white/90 border-black/5 backdrop-blur-xl'
         }`}
         headerClassName={`font-bold text-xl mb-6 ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}
+        isDarkMode={isDarkMode}
       />
     </div>
   );

@@ -66,9 +66,6 @@ const Table = ({
                 No
               </th>
               <th className={`${cellClassName} ${headerClassName} text-center`}>
-                Item Code
-              </th>
-              <th className={`${cellClassName} ${headerClassName} text-center`}>
                 Product
               </th>
               <th className={`${cellClassName} ${headerClassName} text-center`}>
@@ -109,9 +106,6 @@ const Table = ({
                       </div>
                     </td>
                     <td className={`${cellClassName} text-center`}>
-                      {"MANUAL-" + Math.floor(100000 + Math.random() * 900000)}
-                    </td>
-                    <td className={`${cellClassName} text-center`}>
                       {i.product.charAt(0).toUpperCase() + i.product.slice(1)}
                     </td>
                     <td className={`${cellClassName} text-center`}>
@@ -136,7 +130,7 @@ const Table = ({
             ) : (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan="5"
                   className={`${cellClassName} text-center text-[#767c8f]`}
                 >
                   No items found.

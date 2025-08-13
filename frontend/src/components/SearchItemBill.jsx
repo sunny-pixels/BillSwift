@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { FaSearch } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 const SearchItemBill = ({
   onItemSelect,
+  onCtrlEnterPrint,
   name,
   className,
   iconClassName,
@@ -16,14 +17,24 @@ const SearchItemBill = ({
   const [selectedItem, setSelectedItem] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const resultsRef = useRef(null);
+  const debounceRef = useRef(null);
+  const abortRef = useRef(null);
+
+  const isDarkMode = useMemo(() => {
+    try {
+      return (localStorage.getItem("theme") || "dark") === "dark";
+    } catch {
+      return true;
+    }
+  }, []);
 
   useEffect(() => {
     console.log("Updated input value:", input);
   }, [input]);
 
   useEffect(() => {
-    // Reset selected item when results change
-    setSelectedItem(-1);
+    // Highlight first item when results are present
+    if (results.length > 0) setSelectedItem(0); else setSelectedItem(-1);
   }, [results]);
 
   // Scroll selected item into view
@@ -51,7 +62,12 @@ const SearchItemBill = ({
     if (!value.includes(" - ")) {
       setIsLoading(true);
       try {
-        const response = await fetch(API_URL);
+        if (abortRef.current) {
+          try { abortRef.current.abort(); } catch {}
+        }
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const response = await fetch(API_URL, { signal: controller.signal });
         if (!response.ok) {
           throw new Error("Failed to fetch items");
         }
@@ -66,9 +82,13 @@ const SearchItemBill = ({
         setResults(filteredResults);
         setShowResults(true);
       } catch (error) {
-        console.error("Error fetching items:", error);
-        toast.error("Failed to fetch items. Please try again.");
-        setResults([]);
+        if (error?.name === 'AbortError') {
+          // ignore aborted requests
+        } else {
+          console.error("Error fetching items:", error);
+          toast.error("Failed to fetch items. Please try again.");
+          setResults([]);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +100,15 @@ const SearchItemBill = ({
 
   const handleChange = (value) => {
     setInput(value);
-    fetchData(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim()) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      fetchData(value);
+    }, 200);
   };
 
   const handleResultClick = (result) => {
@@ -109,6 +137,12 @@ const SearchItemBill = ({
   };
 
   const handleKeyDown = (e) => {
+    // Ignore Ctrl+Enter so it doesn't add items when using the print shortcut
+    if (e.ctrlKey && (e.key === "Enter" || e.code === "Enter")) {
+      e.preventDefault();
+      onCtrlEnterPrint?.();
+      return;
+    }
     if (e.key === "Enter") {
       // Check if input has the format "product - quantity - price"
       if (input.includes(" - ")) {
@@ -140,11 +174,17 @@ const SearchItemBill = ({
             toast.error("Failed to add item. Please check the format.");
           }
         }
-      } else if (results.length > 0 && selectedItem >= 0) {
-        const selectedResult = results[selectedItem];
-        if (selectedResult) {
-          handleResultClick(selectedResult);
-        }
+      } else if (results.length > 0) {
+        const indexToUse = selectedItem >= 0 ? selectedItem : 0;
+        const selectedResult = results[indexToUse];
+        if (selectedResult) handleResultClick(selectedResult);
+      }
+    } else if (e.key === "Tab" && results.length > 0) {
+      e.preventDefault();
+      if (e.shiftKey) {
+        setSelectedItem((prev) => (prev <= 0 ? results.length - 1 : prev - 1));
+      } else {
+        setSelectedItem((prev) => (prev === -1 || prev >= results.length - 1 ? 0 : prev + 1));
       }
     } else if (e.key === "ArrowUp" && results.length > 0) {
       e.preventDefault();
@@ -166,6 +206,13 @@ const SearchItemBill = ({
         <input
           type="text"
           placeholder={name}
+          id="global-search-input"
+          autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          inputMode="search"
           className={`outline-none bg-transparent w-full placeholder:${placeholderClassName}`}
           value={input}
           onChange={(e) => handleChange(e.target.value)}
@@ -175,6 +222,10 @@ const SearchItemBill = ({
               setShowResults(true);
             }
           }}
+          onBlur={() => {
+            // Delay hiding to allow click to register
+            setTimeout(() => setShowResults(false), 150);
+          }}
         />
       </div>
 
@@ -182,10 +233,12 @@ const SearchItemBill = ({
       {showResults && input.trim() !== "" && !input.includes(" - ") && (
         <div
           ref={resultsRef}
-          className="absolute top-[60px] w-full bg-white rounded-[24px] flex flex-col shadow-md max-h-[200px] overflow-y-auto z-15 scrollbar-hide border border-[#f4f4f6]"
+          className={`absolute top-[60px] w-full rounded-[24px] flex flex-col shadow-lg max-h-[240px] overflow-y-auto z-50 scrollbar-hide border ${
+            isDarkMode ? 'bg-[#2a2a2d] border-white/10' : 'bg-white border-[#f4f4f6]'
+          }`}
         >
           {isLoading ? (
-            <div className="p-3 text-[#767c8f] text-center">Loading...</div>
+            <div className={`p-3 text-center ${isDarkMode ? 'text-[#9aa0ae]' : 'text-[#767c8f]'}`}>Loading...</div>
           ) : results.length > 0 ? (
             results.map((result, index) => (
               <div
@@ -195,15 +248,19 @@ const SearchItemBill = ({
                 tabIndex={0}
                 className={
                   selectedItem === index
-                    ? "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none"
-                    : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none focus:bg-[#f4f4f6] transition-colors duration-150"
+                    ? isDarkMode
+                      ? "p-3 bg-[#343438] text-white font-medium text-[13px] cursor-pointer focus:outline-none"
+                      : "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none"
+                    : isDarkMode
+                      ? "p-3 hover:bg-[#343438] text-white font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
+                      : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
                 }
               >
                 {result?.product || "No Item Code"}
               </div>
             ))
           ) : (
-            <div className="p-3 text-[#767c8f] text-center">No items found</div>
+            <div className={`p-3 text-center ${isDarkMode ? 'text-[#9aa0ae]' : 'text-[#767c8f]'}`}>No items found</div>
           )}
         </div>
       )}

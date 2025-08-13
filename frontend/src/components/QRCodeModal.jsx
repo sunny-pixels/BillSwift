@@ -93,11 +93,11 @@ const QRCodeModal = ({
 
   return (
     <div className={overlayClassName}>
-      <div className={modalClassName + (isDarkMode ? ' text-white' : ' text-black')}>
-        <div className={"flex justify-between items-center mb-6"}>
-          <h2 className={headerClassName + (isDarkMode ? ' text-white' : ' text-black')}>WhatsApp Connection</h2>
+      <div className={modalClassName}>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className={headerClassName}>WhatsApp Connection</h2>
           <button
-            className={"text-inherit opacity-60 hover:opacity-100 text-3xl transition-opacity"}
+            className={`opacity-60 hover:opacity-100 text-3xl transition-opacity ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}
             onClick={onClose}
             type="button"
           >
@@ -107,13 +107,13 @@ const QRCodeModal = ({
 
         {status === 'qr' && qrData && (
           <div className="flex flex-col items-center gap-4">
-            <span className={isDarkMode ? 'text-white' : 'text-black'}>
+            <span className={`${isDarkMode ? 'text-white' : 'text-[#141416]'} text-sm`}>
               Scan this QR code with WhatsApp on your phone to connect
             </span>
             <div className="bg-white p-4 rounded-lg">
               <QRCode value={qrData} size={200} />
             </div>
-            <span className={"text-sm mt-2 " + (isDarkMode ? 'text-white' : 'text-black')}>
+            <span className={`text-sm mt-2 ${isDarkMode ? 'text-[#9aa0ae]' : 'text-[#767c8f]'}`}>
               Open WhatsApp → Settings → Linked Devices → Link a Device
             </span>
           </div>
@@ -121,7 +121,7 @@ const QRCodeModal = ({
 
         {(status === 'waiting' || loading) && (
           <div className="flex flex-col items-center gap-4">
-            <span className={isDarkMode ? 'text-white' : 'text-black'}>
+            <span className={`${isDarkMode ? 'text-white' : 'text-[#141416]'} text-sm`}>
               {loading ? 'Generating new QR code...' : 'Waiting for QR code...'}
             </span>
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3379E9]"></div>
