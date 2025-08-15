@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SlideBar from "../components/SlideBar";
 import SearchItemInventory from "../components/SearchItemInventory";
 import Table from "../components/Table";
@@ -19,6 +19,11 @@ const InventoryPage = () => {
     const savedTheme = localStorage.getItem("theme");
     return savedTheme ? savedTheme === "dark" : true; // Default to dark if no preference
   });
+
+  // Refs for Tab navigation
+  const searchRef = useRef(null);
+  const addItemRef = useRef(null);
+  const generateBillRef = useRef(null);
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -96,6 +101,20 @@ const InventoryPage = () => {
     const total = items.reduce((sum, item) => sum + (item.netamt || 0), 0);
     setTotalValue(total);
   }, [items]);
+
+  // Handle Tab from last table cell - move to Add Item button
+  const handleLastTableCellTab = () => {
+    if (addItemRef.current) {
+      addItemRef.current.focus();
+    }
+  };
+
+  // Handle Tab from Generate Bill button - move to search
+  const handleGenerateBillTab = () => {
+    if (searchRef.current) {
+      searchRef.current.focus();
+    }
+  };
 
   return (
     <div className={`flex p-6 ${isDarkMode ? "bg-[#141416]" : "bg-white"}`}>
@@ -189,6 +208,7 @@ const InventoryPage = () => {
                     ? "bg-[#2a2a2d] text-white hover:bg-[#1A1A1C]"
                     : "bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]"
                 }`}
+                tabIndex={-1} // Exclude from Tab order
               >
                 {isDarkMode ? (
                   <HiSun className="text-xl" />
@@ -198,6 +218,7 @@ const InventoryPage = () => {
               </button>
               <div className="relative w-[400px]">
                 <SearchItemInventory
+                  ref={searchRef}
                   name="Search Product"
                   onItemHighlight={handleHighlightRecord}
                   className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 ${
@@ -214,6 +235,7 @@ const InventoryPage = () => {
                   placeholderClassName={`text-base font-medium ${
                     isDarkMode ? "text-[#767c8f]" : "text-[#141416]"
                   }`}
+                  tabIndex={1} // First in Tab order
                 />
               </div>
             </div>
@@ -221,11 +243,19 @@ const InventoryPage = () => {
 
           {/* Table Section */}
           <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
+            {/* Keyboard Navigation Instructions */}
+            <div
+              className={`mb-4 text-sm ${
+                isDarkMode ? "text-[#767c8f]" : "text-[#767c8f]"
+              }`}
+            ></div>
             <div>
               <Table
                 items={items}
                 setItems={setItems}
                 highlightedItemId={highlightedItemId}
+                isDarkMode={isDarkMode}
+                onLastCellTab={handleLastTableCellTab}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
                   isDarkMode
                     ? "[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]"
@@ -258,23 +288,33 @@ const InventoryPage = () => {
         {/* Action Buttons */}
         <div className="flex justify-end gap-4">
           <button
+            ref={addItemRef}
             onClick={handleAddClick}
-            className={`px-4 py-2 font-medium rounded inline-flex items-center ${
+            className={`px-4 py-2 font-medium rounded inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
               isDarkMode
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#141416] hover:bg-[#2a2a2d] text-white"
             }`}
+            tabIndex={2 + items.length * 4} // After all table cells (search=1, table cells start at 2)
           >
             <HiPlus className="text-lg mr-2 stroke-2" />
             Add Item
           </button>
           <button
+            ref={generateBillRef}
             onClick={handleGenerateBill}
-            className={`px-4 py-2 font-medium rounded inline-flex items-center ${
+            className={`px-4 py-2 font-medium rounded inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
               isDarkMode
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
             }`}
+            tabIndex={2 + items.length * 4 + 1} // After Add Item button
+            onKeyDown={(e) => {
+              if (e.key === "Tab" && !e.shiftKey) {
+                e.preventDefault();
+                handleGenerateBillTab();
+              }
+            }}
           >
             <HiArrowUpRight className="text-lg mr-2 stroke-2" />
             Generate Bill
@@ -301,7 +341,7 @@ const InventoryPage = () => {
             ? "bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f] focus:border-[#3379E9]"
             : "bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f] focus:border-[#3379E9]"
         }`}
-        buttonClassName={`w-full p-4 font-medium rounded-[16px] transition-colors duration-200 ${
+        buttonClassName={`w-full p-4 rounded-[16px] transition-colors duration-200 ${
           isDarkMode
             ? "bg-[#3379E9] hover:bg-[#1466e4] text-white"
             : "bg-[#3379E9] hover:bg-[#1466e4] text-white"
