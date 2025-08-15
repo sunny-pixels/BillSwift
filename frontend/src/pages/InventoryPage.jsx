@@ -3,7 +3,6 @@ import SlideBar from "../components/SlideBar";
 import SearchItemInventory from "../components/SearchItemInventory";
 import Table from "../components/Table";
 import { useNavigate } from "react-router-dom";
-import AddItemsModal from "../components/AddItemsModal";
 import axios from "axios";
 import { HiPlus } from "react-icons/hi2";
 import { HiArrowUpRight } from "react-icons/hi2";
@@ -11,7 +10,6 @@ import { HiMoon, HiSun } from "react-icons/hi2";
 
 const InventoryPage = () => {
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
   const [items, setItems] = useState([]);
   const [highlightedItemId, setHighlightedItemId] = useState(null);
   const [totalValue, setTotalValue] = useState(0);
@@ -33,19 +31,32 @@ const InventoryPage = () => {
   };
 
   const handleAddClick = () => {
-    setShowModal(true);
-  };
+    // Create a new empty item instead of opening modal
+    const newItem = {
+      _id: `temp_${Date.now()}`, // Temporary ID for new items
+      itemCode: `ITEM${items.length + 1}`,
+      product: "",
+      quantity: "",
+      mrp: "",
+      netamt: 0,
+      isNew: true, // Flag to identify new items
+    };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+    setItems((prevItems) => [...prevItems, newItem]);
+
+    // Focus on the new row's product input after a short delay
+    setTimeout(() => {
+      const newRowProductInput = document.querySelector(
+        `input[tabindex="${2 + items.length * 4}"]`
+      );
+      if (newRowProductInput) {
+        newRowProductInput.focus();
+      }
+    }, 100);
   };
 
   const handleGenerateBill = () => {
     navigate("/bill");
-  };
-
-  const handleItemAdded = (newItem) => {
-    setItems((prevItems) => [...prevItems, newItem]);
   };
 
   const handleHighlightRecord = (item) => {
@@ -321,32 +332,6 @@ const InventoryPage = () => {
           </button>
         </div>
       </div>
-
-      <AddItemsModal
-        isOpen={showModal}
-        onClose={handleCloseModal}
-        onItemAdded={handleItemAdded}
-        isDarkMode={isDarkMode}
-        overlayClassName="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 flex items-center justify-center"
-        modalClassName={`p-6 w-full max-w-3xl border rounded-[24px] shadow-xl ${
-          isDarkMode
-            ? "bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl"
-            : "bg-white/90 border-black/5 backdrop-blur-xl"
-        }`}
-        headerClassName={`font-bold text-xl ${
-          isDarkMode ? "text-white" : "text-[#141416]"
-        }`}
-        inputClassName={`w-full p-4 rounded-[16px] mb-4 focus:outline-none border transition-colors duration-200 ${
-          isDarkMode
-            ? "bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f] focus:border-[#3379E9]"
-            : "bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f] focus:border-[#3379E9]"
-        }`}
-        buttonClassName={`w-full p-4 rounded-[16px] transition-colors duration-200 ${
-          isDarkMode
-            ? "bg-[#3379E9] hover:bg-[#1466e4] text-white"
-            : "bg-[#3379E9] hover:bg-[#1466e4] text-white"
-        }`}
-      />
     </div>
   );
 };
