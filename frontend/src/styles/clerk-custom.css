@@ -1,0 +1,85 @@
+/* Custom Clerk Modal Styling for BillSwift */
+
+/* Fix email input border visibility */
+.cl-formFieldInput {
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: white !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #0a66e5 !important;
+  box-shadow: 0 0 0 3px rgba(10, 102, 229, 0.1) !important;
+  outline: none !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Enhance the modal appearance */
+.cl-modalContent {
+  border-radius: 24px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Style the Google sign-in button */
+.cl-socialButtonsBlockButton {
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: white !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  border-color: #0a66e5 !important;
+  background: #f8fafc !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Style the Continue button */
+.cl-formButtonPrimary {
+  background: #0a66e5 !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background: #0952b7 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(10, 102, 229, 0.3) !important;
+}
+
+/* Improve modal header spacing */
+.cl-modalHeader {
+  padding-bottom: 24px !important;
+}
+
+/* Better spacing between elements */
+.cl-formField {
+  margin-bottom: 20px !important;
+}
+
+.cl-formFieldLabel {
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Remove any unwanted spacing */
+.cl-socialButtonsBlock {
+  margin-bottom: 0 !important;
+}
+
+/* Ensure proper spacing after Google button */
+.cl-socialButtonsBlockButton {
+  margin-bottom: 24px !important;
+}

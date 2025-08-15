@@ -3,8 +3,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import Item from "./models/item.model.js";
 import mongoose from "mongoose";
-// import itemRoutes from "./routes/items.route.js";
-
 import { connectDB } from "./lib/db.js";
 
 const app = express();
@@ -17,9 +15,6 @@ dotenv.config();
 const PORT = process.env.PORT;
 
 connectDB();
-
-// Routes
-// app.use("/api/items", itemRoutes)
 
 app.get("/", (req, res) => {
   Item.find({})

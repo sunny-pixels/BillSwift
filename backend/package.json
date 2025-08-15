@@ -11,6 +11,7 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
+    "@clerk/backend": "^2.7.1",
     "@hapi/boom": "^10.0.1",
     "@whiskeysockets/baileys": "^6.17.16",
     "cors": "^2.8.5",
