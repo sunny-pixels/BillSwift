@@ -214,7 +214,7 @@ const InventoryPage = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleTheme}
-                className={`p-2 rounded-full inline-flex items-center justify-center ${
+                className={`p-2 rounded-[24px] inline-flex items-center justify-center ${
                   isDarkMode
                     ? "bg-[#2a2a2d] text-white hover:bg-[#1A1A1C]"
                     : "bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]"
@@ -301,7 +301,7 @@ const InventoryPage = () => {
           <button
             ref={addItemRef}
             onClick={handleAddClick}
-            className={`px-4 py-2 font-medium rounded inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
+            className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
               isDarkMode
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#141416] hover:bg-[#2a2a2d] text-white"
@@ -314,7 +314,7 @@ const InventoryPage = () => {
           <button
             ref={generateBillRef}
             onClick={handleGenerateBill}
-            className={`px-4 py-2 font-medium rounded inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
+            className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
               isDarkMode
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"

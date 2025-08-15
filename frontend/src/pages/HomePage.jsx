@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
+import { HiShoppingBag } from "react-icons/hi";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -31,7 +32,10 @@ const HomePage = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a66e5]">
       <div className="max-w-md w-full p-8 bg-white rounded-[24px]">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-[#141416]">BillSwift</h1>
+          <h1 className="text-4xl font-bold text-[#141416] flex items-center justify-center gap-3">
+            BillSwift
+            <HiShoppingBag className="text-3xl text-[#0a66e5]" />
+          </h1>
           <p className="text-[#767c8f] text-base">
             Streamline your billing management experience
           </p>

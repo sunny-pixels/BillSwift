@@ -38,26 +38,18 @@
 @layer components {
     /* Apply rounded corners to common interactive elements */
     button,
-    input,
     select,
     textarea,
     .rounded-lg,
     .shadow-lg,
     .bg-white,
-    .border,
     /* Ensure modal and card components get the radius */
     div[role="dialog"],
     .modal,
     .card,
     .bg-\[\#F2EFE7\],
     .bg-\[\#ecebe8\],
-    /* Table specific rounded corners */
-    table,
-    th,
-    td,
-    /* Search and input containers */
-    .search-container,
-    .input-container {
+   .input-container {
         border-radius: 24px !important;
         box-shadow: none !important;
         outline: none !important;

@@ -62,7 +62,7 @@ const ShortcutsModal = ({ isOpen, onClose }) => {
           <button
             onClick={onClose}
             aria-label="Close"
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
+            className={`px-3 py-1 rounded-[24px] text-sm font-medium ${
               isDarkMode
                 ? "bg-[#2a2a2d] text-white hover:bg-[#343438]"
                 : "bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]"
