@@ -7,13 +7,23 @@ import Table from "../components/Table";
 import Button from "../components/Button";
 import PhoneNumberModal from "../components/PhoneNumberModal";
 import QRCodeModal from "../components/QRCodeModal";
+import BillTabs from "../components/BillTabs";
 import { checkWhatsAppStatus, sendWhatsAppMessage } from "../services/whatsappService";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { HiSun, HiMoon } from "react-icons/hi2";
 
 const BillPage = () => {
-  const [items, setItems] = useState([]);
+  // Tabs state management
+  const [tabs, setTabs] = useState([
+    { id: '1', name: 'Bill 1', items: [] }
+  ]);
+  const [activeTab, setActiveTab] = useState('1');
+  
+  // Get current tab's items
+  const currentTab = tabs.find(tab => tab.id === activeTab);
+  const items = currentTab ? currentTab.items : [];
+  
   const itemsRef = useRef([]);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -48,7 +58,7 @@ const BillPage = () => {
 
   useEffect(() => {
     itemsRef.current = items;
-  }, [items]);
+  }, [items, activeTab]);
 
   useEffect(() => {
     // Set initial background color
@@ -83,7 +93,71 @@ const BillPage = () => {
       netamt: (item.quantity || 1) * (item.mrp || 0),
     };
 
-    setItems((prevItems) => [...prevItems, newItem]);
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTab 
+          ? { ...tab, items: [...tab.items, newItem] }
+          : tab
+      )
+    );
+  };
+
+  // Tab management functions
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  const handleTabAdd = () => {
+    const newTabId = (Math.max(...tabs.map(tab => parseInt(tab.id))) + 1).toString();
+    const newTab = {
+      id: newTabId,
+      name: `Bill ${newTabId}`,
+      items: []
+    };
+    setTabs(prevTabs => [...prevTabs, newTab]);
+    setActiveTab(newTabId);
+  };
+
+  // Update tab names with item counts
+  const updateTabNames = () => {
+    setTabs(prevTabs => 
+      prevTabs.map(tab => ({
+        ...tab,
+        name: `Bill ${tab.id}${tab.items.length > 0 ? ` (${tab.items.length})` : ''}`
+      }))
+    );
+  };
+
+  // Update tab names whenever items change
+  useEffect(() => {
+    updateTabNames();
+  }, [tabs.map(tab => tab.items.length).join(',')]);
+
+  const handleTabClose = (tabId) => {
+    if (tabs.length === 1) {
+      toast.error("Cannot close the last tab");
+      return;
+    }
+    
+    setTabs(prevTabs => prevTabs.filter(tab => tab.id !== tabId));
+    
+    // If closing the active tab, switch to the previous tab
+    if (activeTab === tabId) {
+      const currentIndex = tabs.findIndex(tab => tab.id === tabId);
+      const newActiveTab = tabs[currentIndex - 1] || tabs[currentIndex + 1];
+      setActiveTab(newActiveTab.id);
+    }
+  };
+
+  // Function to update items in current tab
+  const setItems = (newItems) => {
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTab 
+          ? { ...tab, items: newItems }
+          : tab
+      )
+    );
   };
 
   // PDF Generation Function
@@ -205,17 +279,25 @@ const BillPage = () => {
     }
   };
 
-  // Ctrl+Enter hotkey to print bill (with animation) - keep latest items via deps
+  // Keyboard shortcuts
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.ctrlKey && (e.key === "Enter" || e.code === "Enter")) {
         e.preventDefault();
         triggerPrintWithAnimation();
       }
+      if (e.ctrlKey && e.key === "t") {
+        e.preventDefault();
+        handleTabAdd();
+      }
+      if (e.ctrlKey && e.key === "w") {
+        e.preventDefault();
+        handleTabClose(activeTab);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [items]);
+  }, [items, activeTab]);
 
   const handlePhoneSubmit = async (phoneNumber) => {
     try {
@@ -288,10 +370,29 @@ const BillPage = () => {
     <div className={`flex p-6 ${isDarkMode ? 'bg-[#141416]' : 'bg-white'}`}>
       <SlideBar isDarkMode={isDarkMode} />
       <div className="flex-1 flex flex-col gap-6">
+        {/* Tabs Section */}
+        <BillTabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onTabAdd={handleTabAdd}
+          onTabClose={handleTabClose}
+          isDarkMode={isDarkMode}
+        />
+        
         {/* Search and Title Section */}
-        <div className={`p-6 rounded-[24px] border-3 ${isDarkMode ? 'bg-[#1A1A1C] border-[#1A1A1C]' : 'bg-white border-[#f4f4f6]'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}>Bill Management</h1>
+        <div className={`p-6 rounded-t-[24px] rounded-b-[24px] border-3 ${isDarkMode ? 'bg-[#1A1A1C] border-[#1A1A1C]' : 'bg-white border-[#f4f4f6]'}`}>
+          <div className="flex items-center justify-between mb-6 pl-6">
+            <div className="flex items-center gap-3">
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}>Bill Management</h1>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                isDarkMode 
+                  ? 'bg-[#3379E9] text-white' 
+                  : 'bg-[#3379E9] text-white'
+              }`}>
+                {currentTab?.name || 'Bill 1'}
+              </span>
+            </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleTheme}

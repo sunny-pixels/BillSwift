@@ -54,4 +54,31 @@
         box-shadow: none !important;
         outline: none !important;
     }
+    
+    /* Enhanced tab styling with better roundness */
+    .tab-container {
+        border-radius: 28px !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    
+    .tab-item {
+        border-radius: 24px !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    
+    /* Additional rounded elements */
+    .rounded-tab {
+        border-radius: 24px !important;
+    }
+    
+    .rounded-tab-top {
+        border-top-left-radius: 24px !important;
+        border-top-right-radius: 24px !important;
+    }
+    
+    .rounded-tab-button {
+        border-radius: 20px !important;
+    }
 }

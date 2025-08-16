@@ -12,7 +12,7 @@ const SlideBar = ({ isDarkMode }) => {
   return (
     <div className={`w-20 flex flex-col items-center pt-0 pb-8 ${isDarkMode ? 'bg-[#141416]' : 'bg-white'}`}>
       <Link to="/">
-        <div className={`p-3 rounded-xl mb-8 flex flex-col items-center ${
+        <div className={`w-16 h-16 rounded-xl mb-8 flex flex-col items-center justify-center ${
           isActive("/")
             ? isDarkMode 
               ? 'bg-[#1A1A1C] text-white' 
@@ -26,7 +26,7 @@ const SlideBar = ({ isDarkMode }) => {
         </div>
       </Link>
       <Link to="/inventory">
-        <div className={`p-3 rounded-xl mb-8 flex flex-col items-center ${
+        <div className={`w-16 h-16 rounded-xl mb-8 flex flex-col items-center justify-center ${
           isActive("/inventory")
             ? isDarkMode 
               ? 'bg-[#1A1A1C] text-white' 
@@ -40,7 +40,7 @@ const SlideBar = ({ isDarkMode }) => {
         </div>
       </Link>
       <Link to="/bill">
-        <div className={`p-3 rounded-xl flex flex-col items-center ${
+        <div className={`w-16 h-16 rounded-xl flex flex-col items-center justify-center ${
           isActive("/bill")
             ? isDarkMode 
               ? 'bg-[#1A1A1C] text-white' 
