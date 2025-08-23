@@ -18,6 +18,58 @@ const Table = ({
 }) => {
   const highlightedRowRef = useRef(null);
   const lastInputRef = useRef(null);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  // Toast notification component
+  const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    const getToastStyles = () => {
+      if (type === "error" || message.includes("deleted")) {
+        return {
+          bg: "bg-black",
+          shadow: "shadow-[0_8px_32px_rgba(0,0,0,0.3)]",
+          border: "border-black/20",
+        };
+      }
+      return {
+        bg: "bg-[#0a66e5]",
+        shadow: "shadow-[0_8px_32px_rgba(10,102,229,0.3)]",
+        border: "border-[#3379E9]/20",
+      };
+    };
+
+    const styles = getToastStyles();
+
+    return (
+      <div className="fixed top-6 right-6 z-50">
+        <div
+          className={`${styles.bg} px-6 py-4 rounded-[16px] ${styles.shadow} text-white font-medium flex items-center gap-3 border ${styles.border} backdrop-blur-sm`}
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          <span className="text-sm">{message}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: "", type: "success" });
+  };
 
   useEffect(() => {
     if (highlightedItemId && highlightedRowRef.current) {
@@ -27,6 +79,25 @@ const Table = ({
       });
     }
   }, [highlightedItemId]);
+
+  // Auto-scroll to new items when they're added
+  useEffect(() => {
+    const newItems = items.filter((item) => item.isNew);
+    if (newItems.length > 0) {
+      const lastNewItem = newItems[newItems.length - 1];
+      const newItemRow = document.querySelector(
+        `[data-item-id="${lastNewItem._id}"]`
+      );
+      if (newItemRow) {
+        setTimeout(() => {
+          newItemRow.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 50);
+      }
+    }
+  }, [items]);
 
   const handleDeleteClick = async (itemId) => {
     try {
@@ -48,6 +119,9 @@ const Table = ({
       // First remove from local state immediately for better UX
       setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
 
+      // Show success message
+      showToast("Item deleted successfully!", "success");
+
       // If it's a new item (not yet saved to backend), just remove from local state
       if (itemToDelete.isNew) {
         console.log("New item deleted from local state only");
@@ -59,8 +133,8 @@ const Table = ({
       console.log("Delete response:", response);
     } catch (err) {
       console.error("Failed to delete item:", err);
-      // You could add a toast notification here instead of console.log
-      // For now, we'll just log the error since the item is already removed from UI
+      // Show error message if deletion fails
+      showToast("Failed to delete item. Please try again.", "error");
     }
   };
 
@@ -95,13 +169,13 @@ const Table = ({
   const saveItemById = async (itemId) => {
     try {
       const item = items.find((x) => x._id === itemId);
-      if (!item) return;
+      if (!item) return Promise.resolve({ success: false });
 
       // Check if the item is empty (no product name)
       if (!item.product || item.product.trim() === "") {
         // Remove empty row from local state
         setItems((prev) => prev.filter((it) => it._id !== itemId));
-        return;
+        return Promise.resolve({ success: false });
       }
 
       // Check if quantity and MRP are valid numbers
@@ -110,7 +184,7 @@ const Table = ({
 
       if (isNaN(quantity) || isNaN(mrp)) {
         // Don't save if values are invalid, just update local state
-        return;
+        return Promise.resolve({ success: false });
       }
 
       const payload = {
@@ -126,19 +200,32 @@ const Table = ({
         if (quantity > 0 && mrp > 0) {
           try {
             const response = await axios.post(`${API_URL}/createItem`, payload);
-            // Update local state with the real item from backend
+            // Update local state with the real item from backend, preserving the current values
             setItems((prev) =>
               prev.map((it) =>
-                it._id === itemId ? { ...response.data, isNew: false } : it
+                it._id === itemId
+                  ? {
+                      ...it,
+                      ...response.data,
+                      isNew: false,
+                      // Ensure the display values are preserved
+                      product: it.product,
+                      quantity: it.quantity,
+                      mrp: it.mrp,
+                      netamt: it.netamt,
+                    }
+                  : it
               )
             );
+            return Promise.resolve({ success: true });
           } catch (err) {
             console.log("Failed to create item:", err);
             // Don't remove the row on creation failure, let user retry
-            return;
+            return Promise.resolve({ success: false });
           }
         }
         // If quantity or MRP is 0, keep the item in local state but don't save to backend
+        return Promise.resolve({ success: false });
       } else {
         // Update existing item
         try {
@@ -146,20 +233,33 @@ const Table = ({
             ...payload,
             _id: itemId,
           });
-          // Normalize numbers in local state after save
+          // Normalize numbers in local state after save, preserving display values
           setItems((prev) =>
-            prev.map((it) => (it._id === itemId ? { ...it, ...payload } : it))
+            prev.map((it) =>
+              it._id === itemId
+                ? {
+                    ...it,
+                    ...payload,
+                    // Ensure the display values are preserved
+                    product: it.product,
+                    quantity: it.quantity,
+                    mrp: it.mrp,
+                    netamt: it.netamt,
+                  }
+                : it
+            )
           );
+          return Promise.resolve({ success: true });
         } catch (err) {
           console.log("Failed to update item:", err);
           // Don't remove the row on update failure, let user retry
-          return;
+          return Promise.resolve({ success: false });
         }
       }
     } catch (err) {
       console.log("Unexpected error:", err);
       // Don't remove the row on unexpected errors
-      return;
+      return Promise.resolve({ success: false });
     }
   };
 
@@ -173,6 +273,11 @@ const Table = ({
 
   return (
     <>
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
+
       <div className="h-[292px] overflow-y-auto custom-scroll">
         <table className={`sticky-header ${className}`}>
           <thead>
@@ -213,6 +318,7 @@ const Table = ({
                   <tr
                     key={i.itemCode || i._id}
                     ref={isHighlighted ? highlightedRowRef : null}
+                    data-item-id={i._id}
                     className={`group ${rowClassName} ${
                       isHighlighted ? highlightClassName : ""
                     } ${
@@ -247,15 +353,66 @@ const Table = ({
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
-                              // Shift + Enter: Move to Add Item button
+                              // Shift + Enter: Create new row only if current row is complete
                               e.preventDefault();
-                              if (onLastCellTab) {
-                                onLastCellTab();
+
+                              // Check if there's already an incomplete new row
+                              const incompleteNewRow = items.find(
+                                (item) =>
+                                  item.isNew &&
+                                  (!item.product ||
+                                    item.product.trim() === "" ||
+                                    !item.quantity ||
+                                    item.quantity <= 0 ||
+                                    !item.mrp ||
+                                    item.mrp <= 0)
+                              );
+
+                              if (incompleteNewRow) {
+                                // Show warning toast
+                                showToast(
+                                  "Please complete the current row first!",
+                                  "error"
+                                );
+                                return;
                               }
+
+                              // Create a new empty item
+                              const newItem = {
+                                _id: `temp_${Date.now()}`,
+                                itemCode: `ITEM${items.length + 1}`,
+                                product: "",
+                                quantity: "",
+                                mrp: "",
+                                netamt: 0,
+                                isNew: true,
+                              };
+                              setItems((prevItems) => [...prevItems, newItem]);
+
+                              // Focus on the new row's product input after a short delay
+                              setTimeout(() => {
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 4}"]`
+                                  );
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
+                                  // Scroll to ensure the new row is visible
+                                  newRowProductInput.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                  });
+                                }
+                              }, 100);
                             } else {
-                              // Normal Enter: Save and blur
+                              // Normal Enter: Save and move to quantity field
                               e.preventDefault();
-                              e.currentTarget.blur();
+                              const quantityInput = document.querySelector(
+                                `input[tabindex="${quantityTabIndex}"]`
+                              );
+                              if (quantityInput) {
+                                quantityInput.focus();
+                              }
                             }
                           }
                           // Ctrl + Shift: Quick delete current row and move to Add Item
@@ -307,15 +464,66 @@ const Table = ({
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
-                              // Shift + Enter: Move to Add Item button
+                              // Shift + Enter: Create new row only if current row is complete
                               e.preventDefault();
-                              if (onLastCellTab) {
-                                onLastCellTab();
+
+                              // Check if there's already an incomplete new row
+                              const incompleteNewRow = items.find(
+                                (item) =>
+                                  item.isNew &&
+                                  (!item.product ||
+                                    item.product.trim() === "" ||
+                                    !item.quantity ||
+                                    item.quantity <= 0 ||
+                                    !item.mrp ||
+                                    item.mrp <= 0)
+                              );
+
+                              if (incompleteNewRow) {
+                                // Show warning toast
+                                showToast(
+                                  "Please complete the current row first!",
+                                  "error"
+                                );
+                                return;
                               }
+
+                              // Create a new empty item
+                              const newItem = {
+                                _id: `temp_${Date.now()}`,
+                                itemCode: `ITEM${items.length + 1}`,
+                                product: "",
+                                quantity: "",
+                                mrp: "",
+                                netamt: 0,
+                                isNew: true,
+                              };
+                              setItems((prevItems) => [...prevItems, newItem]);
+
+                              // Focus on the new row's product input after a short delay
+                              setTimeout(() => {
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 4}"]`
+                                  );
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
+                                  // Scroll to ensure the new row is visible
+                                  newRowProductInput.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                  });
+                                }
+                              }, 100);
                             } else {
-                              // Normal Enter: Save and blur
+                              // Normal Enter: Save and move to MRP field
                               e.preventDefault();
-                              e.currentTarget.blur();
+                              const mrpInput = document.querySelector(
+                                `input[tabindex="${mrpTabIndex}"]`
+                              );
+                              if (mrpInput) {
+                                mrpInput.focus();
+                              }
                             }
                           }
                           // Ctrl + Shift: Quick delete current row and move to Add Item
@@ -367,15 +575,102 @@ const Table = ({
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
-                              // Shift + Enter: Move to Add Item button
+                              // Shift + Enter: Create new row only if current row is complete
                               e.preventDefault();
-                              if (onLastCellTab) {
-                                onLastCellTab();
+
+                              // Check if there's already an incomplete new row
+                              const incompleteNewRow = items.find(
+                                (item) =>
+                                  item.isNew &&
+                                  (!item.product ||
+                                    item.product.trim() === "" ||
+                                    !item.quantity ||
+                                    item.quantity <= 0 ||
+                                    !item.mrp ||
+                                    item.mrp <= 0)
+                              );
+
+                              if (incompleteNewRow) {
+                                // Show warning toast
+                                showToast(
+                                  "Please complete the current row first!",
+                                  "error"
+                                );
+                                return;
                               }
+
+                              // Create a new empty item
+                              const newItem = {
+                                _id: `temp_${Date.now()}`,
+                                itemCode: `ITEM${items.length + 1}`,
+                                product: "",
+                                quantity: "",
+                                mrp: "",
+                                netamt: 0,
+                                isNew: true,
+                              };
+                              setItems((prevItems) => [...prevItems, newItem]);
+
+                              // Focus on the new row's product input after a short delay
+                              setTimeout(() => {
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 4}"]`
+                                  );
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
+                                  // Scroll to ensure the new row is visible
+                                  newRowProductInput.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                  });
+                                }
+                              }, 100);
                             } else {
-                              // Normal Enter: Save and blur
+                              // Normal Enter: Save and show success message if item is new
                               e.preventDefault();
-                              e.currentTarget.blur();
+                              if (
+                                i.isNew &&
+                                i.product &&
+                                i.product.trim() !== "" &&
+                                i.quantity > 0 &&
+                                i.mrp > 0
+                              ) {
+                                // This is a new item with valid data, save it and show success
+                                saveItemById(i._id).then((result) => {
+                                  if (result.success) {
+                                    showToast(
+                                      "Item added successfully!",
+                                      "success"
+                                    );
+                                  }
+                                  if (index === items.length - 1) {
+                                    // Last row: Move to Add Item button
+                                    if (onLastCellTab) {
+                                      onLastCellTab();
+                                    }
+                                  } else {
+                                    // Not last row: Move to next row's product input
+                                    const nextRowProductInput =
+                                      document.querySelector(
+                                        `input[tabindex="${
+                                          2 + (index + 1) * 4
+                                        }"]`
+                                      );
+                                    if (nextRowProductInput) {
+                                      nextRowProductInput.focus();
+                                      // Scroll to ensure the next row is visible
+                                      nextRowProductInput.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "center",
+                                      });
+                                    }
+                                  }
+                                });
+                              } else {
+                                // Not a new item or invalid data, just blur
+                                e.currentTarget.blur();
+                              }
                             }
                           }
                           // Ctrl + Shift: Quick delete current row and move to Add Item
@@ -417,7 +712,7 @@ const Table = ({
                             );
                             handleDeleteClick(i._id);
                           }}
-                          className={`${iconClassName} absolute right-4 opacity-0 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] focus:opacity-100`}
+                          className={`${iconClassName} absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] focus:opacity-100`}
                           tabIndex={deleteTabIndex}
                           role="button"
                           aria-label={`Delete item ${i.product}`}

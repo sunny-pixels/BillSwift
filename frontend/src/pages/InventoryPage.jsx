@@ -17,11 +17,63 @@ const InventoryPage = () => {
     const savedTheme = localStorage.getItem("theme");
     return savedTheme ? savedTheme === "dark" : true; // Default to dark if no preference
   });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   // Refs for Tab navigation
   const searchRef = useRef(null);
   const addItemRef = useRef(null);
   const generateBillRef = useRef(null);
+
+  // Toast notification component
+  const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }, [onClose]);
+
+    const getToastStyles = () => {
+      if (type === "error" || message.includes("deleted")) {
+        return {
+          bg: "bg-black",
+          shadow: "shadow-[0_8px_32px_rgba(0,0,0,0.3)]",
+          border: "border-black/20",
+        };
+      }
+      return {
+        bg: "bg-[#0a66e5]",
+        shadow: "shadow-[0_8px_32px_rgba(10,102,229,0.3)]",
+        border: "border-[#3379E9]/20",
+      };
+    };
+
+    const styles = getToastStyles();
+
+    return (
+      <div className="fixed top-6 right-6 z-50">
+        <div
+          className={`${styles.bg} px-6 py-4 rounded-[16px] ${styles.shadow} text-white font-medium flex items-center gap-3 border ${styles.border} backdrop-blur-sm`}
+        >
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          <span className="text-sm">{message}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: "", type: "success" });
+  };
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -31,6 +83,24 @@ const InventoryPage = () => {
   };
 
   const handleAddClick = () => {
+    // Check if there's already an incomplete new row
+    const incompleteNewRow = items.find(
+      (item) =>
+        item.isNew &&
+        (!item.product ||
+          item.product.trim() === "" ||
+          !item.quantity ||
+          item.quantity <= 0 ||
+          !item.mrp ||
+          item.mrp <= 0)
+    );
+
+    if (incompleteNewRow) {
+      // Show warning toast
+      showToast("Please complete the current row first!", "error");
+      return;
+    }
+
     // Create a new empty item instead of opening modal
     const newItem = {
       _id: `temp_${Date.now()}`, // Temporary ID for new items
@@ -51,6 +121,11 @@ const InventoryPage = () => {
       );
       if (newRowProductInput) {
         newRowProductInput.focus();
+        // Scroll the new row into view
+        newRowProductInput.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     }, 100);
   };
@@ -70,9 +145,6 @@ const InventoryPage = () => {
   const fetchItems = () => {
     let apiUrl = import.meta.env.VITE_API_URL;
     if (!apiUrl) {
-      alert(
-        "VITE_API_URL is not set. Please check your environment variables."
-      );
       setItems([]);
       setTotalValue(0);
       return;
@@ -92,9 +164,6 @@ const InventoryPage = () => {
       .catch((err) => {
         setItems([]);
         setTotalValue(0);
-        alert(
-          "Failed to fetch inventory items. Please check your backend connection."
-        );
       });
   };
 
@@ -129,6 +198,11 @@ const InventoryPage = () => {
 
   return (
     <div className={`flex p-6 ${isDarkMode ? "bg-[#141416]" : "bg-white"}`}>
+      {/* Toast Notification */}
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
+
       <SlideBar isDarkMode={isDarkMode} />
       <div className="flex-1 flex flex-col gap-6">
         {/* Top Cards Row */}
@@ -332,6 +406,9 @@ const InventoryPage = () => {
           </button>
         </div>
       </div>
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 };
