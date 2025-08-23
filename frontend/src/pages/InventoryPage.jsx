@@ -117,7 +117,7 @@ const InventoryPage = () => {
     // Focus on the new row's product input after a short delay
     setTimeout(() => {
       const newRowProductInput = document.querySelector(
-        `input[tabindex="${2 + items.length * 4}"]`
+        `input[tabindex="${2 + items.length * 3}"]`
       );
       if (newRowProductInput) {
         newRowProductInput.focus();
@@ -380,7 +380,7 @@ const InventoryPage = () => {
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#141416] hover:bg-[#2a2a2d] text-white"
             }`}
-            tabIndex={2 + items.length * 4} // After all table cells (search=1, table cells start at 2)
+            tabIndex={2 + items.length * 3} // After all table cells (search=1, table cells start at 2)
           >
             <HiPlus className="text-lg mr-2 stroke-2" />
             Add Item
@@ -393,7 +393,7 @@ const InventoryPage = () => {
                 ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
                 : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
             }`}
-            tabIndex={2 + items.length * 4 + 1} // After Add Item button
+            tabIndex={2 + items.length * 3 + 1} // After Add Item button
             onKeyDown={(e) => {
               if (e.key === "Tab" && !e.shiftKey) {
                 e.preventDefault();
