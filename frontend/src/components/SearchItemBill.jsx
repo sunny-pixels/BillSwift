@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 const SearchItemBill = ({
   onItemSelect,
   onCtrlEnterPrint,
+  onTabToTable, // Callback when Tab is pressed to move to table
   name,
   className,
   iconClassName,
@@ -179,12 +180,20 @@ const SearchItemBill = ({
         const selectedResult = results[indexToUse];
         if (selectedResult) handleResultClick(selectedResult);
       }
-    } else if (e.key === "Tab" && results.length > 0) {
-      e.preventDefault();
+    } else if (e.key === "Tab") {
       if (e.shiftKey) {
-        setSelectedItem((prev) => (prev <= 0 ? results.length - 1 : prev - 1));
+        // Shift+Tab: Navigate backward through search results if available
+        if (results.length > 0) {
+          e.preventDefault();
+          setSelectedItem((prev) => (prev <= 0 ? results.length - 1 : prev - 1));
+        }
+        // If no results, let default Shift+Tab behavior work
       } else {
-        setSelectedItem((prev) => (prev === -1 || prev >= results.length - 1 ? 0 : prev + 1));
+        // Normal Tab: Move to table
+        e.preventDefault();
+        if (onTabToTable) {
+          onTabToTable();
+        }
       }
     } else if (e.key === "ArrowUp" && results.length > 0) {
       e.preventDefault();
@@ -207,6 +216,7 @@ const SearchItemBill = ({
           type="text"
           placeholder={name}
           id="global-search-input"
+          tabIndex={1}
           autoFocus
           autoComplete="off"
           autoCorrect="off"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import SlideBar from "../components/SlideBar";
@@ -91,12 +91,63 @@ const BillPage = () => {
       quantity: item.quantity || 1,
       mrp: item.mrp || 0,
       netamt: (item.quantity || 1) * (item.mrp || 0),
+      isNew: true, // Mark as new item
     };
 
     setTabs(prevTabs => 
       prevTabs.map(tab => 
         tab.id === activeTab 
           ? { ...tab, items: [...tab.items, newItem] }
+          : tab
+      )
+    );
+  };
+
+  // Function to update items (for editing)
+  const updateItem = (itemId, updatedFields) => {
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTab 
+          ? { 
+              ...tab, 
+              items: tab.items.map(item => 
+                item._id === itemId 
+                  ? { ...item, ...updatedFields }
+                  : item
+              )
+            }
+          : tab
+      )
+    );
+  };
+
+  // Function to add empty row
+  const addEmptyRow = () => {
+    const newItem = {
+      _id: `temp_${Date.now()}`,
+      itemCode: `ITEM${items.length + 1}`,
+      product: "",
+      quantity: "",
+      mrp: "",
+      netamt: 0,
+      isNew: true,
+    };
+
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTab 
+          ? { ...tab, items: [...tab.items, newItem] }
+          : tab
+      )
+    );
+  };
+
+  // Function to rename tabs
+  const handleTabRename = (tabId, newName) => {
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === tabId 
+          ? { ...tab, name: newName }
           : tab
       )
     );
@@ -121,10 +172,25 @@ const BillPage = () => {
   // Update tab names with item counts
   const updateTabNames = () => {
     setTabs(prevTabs => 
-      prevTabs.map(tab => ({
+      prevTabs.map(tab => {
+        // Check if the tab name is already custom (doesn't follow the "Bill X" pattern)
+        const isCustomName = !tab.name.match(/^Bill \d+/);
+        
+        if (isCustomName) {
+          // Keep custom name but add item count if not present
+          const hasItemCount = tab.name.includes(`(${tab.items.length})`);
+          if (!hasItemCount && tab.items.length > 0) {
+            return { ...tab, name: `${tab.name} (${tab.items.length})` };
+          }
+          return tab;
+        } else {
+          // Standard bill name, update with item count
+          return {
         ...tab,
         name: `Bill ${tab.id}${tab.items.length > 0 ? ` (${tab.items.length})` : ''}`
-      }))
+          };
+        }
+      })
     );
   };
 
@@ -338,14 +404,36 @@ const BillPage = () => {
     checkStatus();
   };
 
-  const handleDeleteClick = (itemId) => {
-    // First remove from local state
-    setItems((prevItems) => prevItems.filter((item) => item._id !== itemId));
+  const handleDeleteClick = useCallback((itemId) => {
+    // Find the item to delete before removing it
+    const currentItems = tabs.find(tab => tab.id === activeTab)?.items || [];
+    const itemToDelete = currentItems.find(item => item._id === itemId);
     
-    // Check if it's a temporary ID (not a MongoDB ObjectId)
+    if (!itemToDelete) {
+      console.error("Item not found for deletion:", itemId);
+      return;
+    }
+    
+    // Remove from local state immediately for better UX
+    setTabs(prevTabs => 
+      prevTabs.map(tab => 
+        tab.id === activeTab 
+          ? { ...tab, items: tab.items.filter((item) => item._id !== itemId) }
+          : tab
+      )
+    );
+    
+    // Check if it's a temporary ID (not a MongoDB ObjectId) or if it's a new item
     const isTemporaryId = !itemId.match(/^[0-9a-fA-F]{24}$/);
+    const isNewItem = itemToDelete.isNew;
     
-    if (!isTemporaryId) {
+    // If it's a temporary ID or new item, just remove from local state
+    if (isTemporaryId || isNewItem) {
+      toast.success("Item removed successfully");
+      return;
+    }
+    
+    // If it's an existing item from database, delete from backend
       axios
         .delete(`http://localhost:5001/deleteItem/${itemId}`)
         .then(() => {
@@ -353,18 +441,17 @@ const BillPage = () => {
         })
         .catch((err) => {
           // Revert the local state change if the API call fails
-          setItems((prevItems) => {
-            const deletedItem = items.find(item => item._id === itemId);
-            if (deletedItem) {
-              return [...prevItems, deletedItem];
-            }
-            return prevItems;
-          });
+        setTabs(prevTabs => 
+          prevTabs.map(tab => 
+            tab.id === activeTab 
+              ? { ...tab, items: [...tab.items, itemToDelete] }
+              : tab
+          )
+        );
           console.error("Delete error:", err);
           toast.error("Failed to delete item from database");
         });
-    }
-  };
+  }, [activeTab, tabs]);
 
   return (
     <div className={`flex p-6 ${isDarkMode ? 'bg-[#141416]' : 'bg-white'}`}>
@@ -377,6 +464,7 @@ const BillPage = () => {
           onTabChange={handleTabChange}
           onTabAdd={handleTabAdd}
           onTabClose={handleTabClose}
+          onTabRename={handleTabRename}
           isDarkMode={isDarkMode}
         />
         
@@ -410,6 +498,25 @@ const BillPage = () => {
                 <SearchItemBill 
                   onItemSelect={addItem}
                   onCtrlEnterPrint={triggerPrintWithAnimation}
+                  onTabToTable={() => {
+                    if (items.length === 0) {
+                      return;
+                    }
+                    
+                    // Focus on the first product's quantity field
+                    const firstQuantityInput = document.querySelector(
+                      'input[tabindex="2"]'
+                    );
+                    if (firstQuantityInput) {
+                      firstQuantityInput.focus();
+                    } else {
+                      // Try alternative selector
+                      const allInputs = document.querySelectorAll('input[type="number"]');
+                      if (allInputs.length > 0) {
+                        allInputs[0].focus();
+                      }
+                    }
+                  }}
                   name="Add Products"
                   className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 ${
                     isDarkMode ? 'bg-[#2a2a2d]' : 'bg-[#f4f4f6]'
@@ -430,6 +537,7 @@ const BillPage = () => {
               <Table 
                 items={items} 
                 setItems={setItems}
+                onUpdateItem={updateItem}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
                   isDarkMode 
                     ? '[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]' 
@@ -445,6 +553,13 @@ const BillPage = () => {
                 }`}
                 cellClassName="px-6 py-4 rounded-none"
                 onDeleteClick={handleDeleteClick}
+                onLastCellTab={() => {
+                  // Focus the search bar when tabbing from the last cell
+                  const searchInput = document.querySelector('input[placeholder="Search for products..."]');
+                  if (searchInput) {
+                    searchInput.focus();
+                  }
+                }}
               />
             </div>
           </div>
