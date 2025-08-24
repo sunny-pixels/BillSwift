@@ -1,31 +1,39 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
+// import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
 import { HiShoppingBag } from "react-icons/hi";
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { openSignIn } = useClerk();
+  // const { user } = useUser();
+  // const { openSignIn } = useClerk();
 
   const handleManageInventory = () => {
-    if (user) {
-      // User is authenticated, navigate to inventory
-      navigate("/inventory");
-    } else {
-      // User is not authenticated, open sign-in modal
-      openSignIn();
-    }
+    // Commented out authentication check for now
+    // if (user) {
+    //   // User is authenticated, navigate to inventory
+    //   navigate("/inventory");
+    // } else {
+    //   // User is not authenticated, open sign-in modal
+    //   openSignIn();
+    // }
+    
+    // Direct navigation without authentication
+    navigate("/inventory");
   };
 
   const handleGoToDashboard = () => {
-    if (user) {
-      // User is authenticated, navigate to dashboard
-      navigate("/dashboard");
-    } else {
-      // User is not authenticated, open sign-in modal
-      openSignIn();
-    }
+    // Commented out authentication check for now
+    // if (user) {
+    //   // User is authenticated, navigate to dashboard
+    //   navigate("/dashboard");
+    // } else {
+    //   // User is not authenticated, open sign-in modal
+    //   openSignIn();
+    // }
+    
+    // Direct navigation without authentication
+    navigate("/bill");
   };
 
   return (
@@ -78,11 +86,13 @@ const HomePage = () => {
         </div>
 
         {/* Show user button if authenticated */}
+        {/* Commented out for now
         {user && (
           <div className="mt-6 flex justify-center">
             <UserButton />
           </div>
         )}
+        */}
 
         <div className="mt-8 text-center">
           <p className="text-xs text-[#767c8f]">
