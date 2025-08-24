@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
-import { MdDelete } from "react-icons/md";
+// import { MdDelete } from "react-icons/md";
 import { AiOutlineClose } from "react-icons/ai";
+import { AiOutlineCheck } from "react-icons/ai";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -25,6 +26,10 @@ const Table = ({
     message: "",
     type: "success",
   });
+
+  // State to track which field is focused for new rows
+  const [focusedField, setFocusedField] = useState(null);
+  const [focusedRowId, setFocusedRowId] = useState(null);
 
   // Toast notification component
   const Toast = ({ message, type, onClose }) => {
@@ -363,11 +368,19 @@ const Table = ({
                   );
 
                 // Calculate tabIndex for each input field - start from 2 (after search)
+<<<<<<< HEAD
                 // Each row has 3 focusable elements: quantity, mrp, delete (product is now read-only)
                 const baseTabIndex = 2 + index * 3;
                 const quantityTabIndex = baseTabIndex;
                 const mrpTabIndex = baseTabIndex + 1;
                 const deleteTabIndex = baseTabIndex + 2;
+=======
+                // Each row has 3 focusable elements: product, quantity, mrp (delete only for saved items)
+                const baseTabIndex = 2 + index * 3;
+                const productTabIndex = baseTabIndex;
+                const quantityTabIndex = baseTabIndex + 1;
+                const mrpTabIndex = baseTabIndex + 2;
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
 
                 return (
                   <tr
@@ -391,15 +404,161 @@ const Table = ({
 
                     {/* Product editable cell */}
                     <td className={`p-0 text-center`}>
+<<<<<<< HEAD
                       <div className="w-full h-full px-6 py-4 text-center flex items-center justify-center">
                         <span className="text-sm font-medium">{i.product || ""}</span>
                       </div>
+=======
+                      <input
+                        className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
+                          i.isNew &&
+                          focusedField === "product" &&
+                          focusedRowId === i._id
+                            ? "bg-blue-50/20"
+                            : ""
+                        }`}
+                        type="text"
+                        value={i.product || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          updateLocalItemField(i._id, "product", value);
+                        }}
+                        onFocus={() => {
+                          // Track which field is focused for new rows
+                          if (i.isNew) {
+                            setFocusedField("product");
+                            setFocusedRowId(i._id);
+                          }
+                        }}
+                        onBlur={() => {
+                          // Reset focused field
+                          if (i.isNew && focusedRowId === i._id) {
+                            setFocusedField(null);
+                            setFocusedRowId(null);
+                          }
+                          // Only save if we have a product name
+                          if (i.product && i.product.trim() !== "") {
+                            saveItemById(i._id);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          // ESC key: Delete new row if it's incomplete
+                          if (e.key === "Escape" && i.isNew) {
+                            e.preventDefault();
+                            // Check if the row is empty or incomplete
+                            if (
+                              !i.product ||
+                              i.product.trim() === "" ||
+                              !i.quantity ||
+                              i.quantity <= 0 ||
+                              !i.mrp ||
+                              i.mrp <= 0
+                            ) {
+                              setItems((prevItems) =>
+                                prevItems.filter((item) => item._id !== i._id)
+                              );
+                              showToast("New row cancelled", "success");
+                              return;
+                            }
+                          }
+
+                          if (e.key === "Enter") {
+                            if (e.shiftKey) {
+                              // Shift + Enter: Create new row only if current row is complete
+                              e.preventDefault();
+
+                              // Check if there's already an incomplete new row
+                              const incompleteNewRow = items.find(
+                                (item) =>
+                                  item.isNew &&
+                                  (!item.product ||
+                                    item.product.trim() === "" ||
+                                    !item.quantity ||
+                                    item.quantity <= 0 ||
+                                    !item.mrp ||
+                                    item.mrp <= 0)
+                              );
+
+                              if (incompleteNewRow) {
+                                // Show warning toast
+                                showToast(
+                                  "Please complete the current row first!",
+                                  "error"
+                                );
+                                return;
+                              }
+
+                              // Create a new empty item
+                              const newItem = {
+                                _id: `temp_${Date.now()}`,
+                                itemCode: `ITEM${items.length + 1}`,
+                                product: "",
+                                quantity: "",
+                                mrp: "",
+                                netamt: 0,
+                                isNew: true,
+                              };
+                              setItems((prevItems) => [...prevItems, newItem]);
+
+                              // Focus on the new row's product input after a short delay
+                              setTimeout(() => {
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 3}"]`
+                                  );
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
+                                  // Scroll to ensure the new row is visible
+                                  newRowProductInput.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "center",
+                                  });
+                                }
+                              }, 100);
+                            } else {
+                              // Normal Enter: Save and move to quantity field
+                              e.preventDefault();
+                              const quantityInput = document.querySelector(
+                                `input[tabindex="${quantityTabIndex}"]`
+                              );
+                              if (quantityInput) {
+                                quantityInput.focus();
+                              }
+                            }
+                          }
+                          // Ctrl + Shift: Quick delete current row and move to Add Item
+                          if (e.ctrlKey && e.shiftKey) {
+                            e.preventDefault();
+                            console.log(
+                              "Ctrl+Shift pressed - quick deleting row:",
+                              i._id
+                            );
+                            // Delete the current row
+                            setItems((prevItems) =>
+                              prevItems.filter((item) => item._id !== i._id)
+                            );
+                            // Move focus to Add Item button
+                            if (onLastCellTab) {
+                              onLastCellTab();
+                            }
+                          }
+                        }}
+                        placeholder="Product"
+                        tabIndex={productTabIndex}
+                      />
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                     </td>
 
                     {/* Quantity editable cell */}
                     <td className={`p-0 text-center`}>
                       <input
-                        className="w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none"
+                        className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
+                          i.isNew &&
+                          focusedField === "quantity" &&
+                          focusedRowId === i._id
+                            ? "bg-blue-50/20"
+                            : ""
+                        }`}
                         type="number"
                         min="0"
                         step="1"
@@ -414,13 +573,26 @@ const Table = ({
                             updateLocalItemField(i._id, "quantity", value);
                           }
                         }}
+                        onFocus={() => {
+                          // Track which field is focused for new rows
+                          if (i.isNew) {
+                            setFocusedField("quantity");
+                            setFocusedRowId(i._id);
+                          }
+                        }}
                         onBlur={() => {
+                          // Reset focused field
+                          if (i.isNew && focusedRowId === i._id) {
+                            setFocusedField(null);
+                            setFocusedRowId(null);
+                          }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
                             saveItemById(i._id);
                           }
                         }}
                         onKeyDown={(e) => {
+<<<<<<< HEAD
                           if (e.key === "Tab") {
                             if (e.shiftKey) {
                               // Shift + Tab: Move to previous field (search bar if first row)
@@ -450,6 +622,28 @@ const Table = ({
                               }
                             }
                           }
+=======
+                          // ESC key: Delete new row if it's incomplete
+                          if (e.key === "Escape" && i.isNew) {
+                            e.preventDefault();
+                            // Check if the row is empty or incomplete
+                            if (
+                              !i.product ||
+                              i.product.trim() === "" ||
+                              !i.quantity ||
+                              i.quantity <= 0 ||
+                              !i.mrp ||
+                              i.mrp <= 0
+                            ) {
+                              setItems((prevItems) =>
+                                prevItems.filter((item) => item._id !== i._id)
+                              );
+                              showToast("New row cancelled", "success");
+                              return;
+                            }
+                          }
+
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
                               // Shift + Enter: Create new row only if current row is complete
@@ -490,8 +684,14 @@ const Table = ({
 
                               // Focus on the new row's quantity input after a short delay
                               setTimeout(() => {
+<<<<<<< HEAD
                                 const newRowQuantityInput = document.querySelector(
                                   `input[tabindex="${2 + items.length * 3}"]`
+=======
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 3}"]`
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                   );
                                 if (newRowQuantityInput) {
                                   newRowQuantityInput.focus();
@@ -538,7 +738,13 @@ const Table = ({
                     {/* MRP editable cell */}
                     <td className={`p-0 text-center`}>
                       <input
-                        className="w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none"
+                        className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
+                          i.isNew &&
+                          focusedField === "mrp" &&
+                          focusedRowId === i._id
+                            ? "bg-blue-50/20"
+                            : ""
+                        }`}
                         type="number"
                         min="0"
                         step="0.01"
@@ -553,13 +759,26 @@ const Table = ({
                             updateLocalItemField(i._id, "mrp", value);
                           }
                         }}
+                        onFocus={() => {
+                          // Track which field is focused for new rows
+                          if (i.isNew) {
+                            setFocusedField("mrp");
+                            setFocusedRowId(i._id);
+                          }
+                        }}
                         onBlur={() => {
+                          // Reset focused field
+                          if (i.isNew && focusedRowId === i._id) {
+                            setFocusedField(null);
+                            setFocusedRowId(null);
+                          }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
                             saveItemById(i._id);
                           }
                         }}
                         onKeyDown={(e) => {
+<<<<<<< HEAD
                           if (e.key === "Tab") {
                             if (e.shiftKey) {
                               // Shift + Tab: Move to quantity field
@@ -594,6 +813,28 @@ const Table = ({
                               }
                             }
                           }
+=======
+                          // ESC key: Delete new row if it's incomplete
+                          if (e.key === "Escape" && i.isNew) {
+                            e.preventDefault();
+                            // Check if the row is empty or incomplete
+                            if (
+                              !i.product ||
+                              i.product.trim() === "" ||
+                              !i.quantity ||
+                              i.quantity <= 0 ||
+                              !i.mrp ||
+                              i.mrp <= 0
+                            ) {
+                              setItems((prevItems) =>
+                                prevItems.filter((item) => item._id !== i._id)
+                              );
+                              showToast("New row cancelled", "success");
+                              return;
+                            }
+                          }
+
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
                               // Shift + Enter: Create new row only if current row is complete
@@ -634,8 +875,14 @@ const Table = ({
 
                               // Focus on the new row's quantity input after a short delay
                               setTimeout(() => {
+<<<<<<< HEAD
                                 const newRowQuantityInput = document.querySelector(
                                   `input[tabindex="${2 + items.length * 3}"]`
+=======
+                                const newRowProductInput =
+                                  document.querySelector(
+                                    `input[tabindex="${2 + items.length * 3}"]`
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                   );
                                 if (newRowQuantityInput) {
                                   newRowQuantityInput.focus();
@@ -673,7 +920,11 @@ const Table = ({
                                     // Not last row: Move to next row's quantity input
                                     const nextRowQuantityInput = document.querySelector(
                                         `input[tabindex="${
+<<<<<<< HEAD
                                         2 + (index + 1) * 3
+=======
+                                          2 + (index + 1) * 3
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                         }"]`
                                       );
                                     if (nextRowQuantityInput) {
@@ -715,37 +966,34 @@ const Table = ({
                       />
                     </td>
 
-                    {/* Net amount + delete cell - light grey, centered */}
+                    {/* Net amount + action cell - light grey, centered */}
                     <td className={`p-0 text-center relative`}>
                       <div className="w-full h-full px-6 py-4 flex items-center justify-center">
                         <span>{i.netamt}</span>
-                        <AiOutlineClose
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log(
-                              "Delete icon clicked for item:",
-                              i._id,
-                              "Product:",
-                              i.product
-                            );
-                            handleDeleteClick(i._id);
-                          }}
-                          className={`${iconClassName} absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] focus:opacity-100`}
-                          tabIndex={deleteTabIndex}
-                          role="button"
-                          aria-label={`Delete item ${i.product}`}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        {i.isNew ? (
+                          <AiOutlineCheck
+                            className={`${iconClassName} absolute right-4 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] ${
+                              focusedField === "mrp" && focusedRowId === i._id
+                                ? "opacity-100"
+                                : "opacity-0 group-hover:opacity-100"
+                            }`}
+                            tabIndex={-1}
+                            role="button"
+                            aria-label={`New item ${i.product}`}
+                          />
+                        ) : (
+                          <AiOutlineClose
+                            onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               console.log(
-                                "Delete icon activated with keyboard for item:",
+                                "Delete icon clicked for item:",
                                 i._id,
                                 "Product:",
                                 i.product
                               );
                               handleDeleteClick(i._id);
+<<<<<<< HEAD
                             }
                             // Handle Tab from delete icon to next row or search bar
                             if (e.key === "Tab" && !e.shiftKey) {
@@ -777,6 +1025,47 @@ const Table = ({
                             }
                           }}
                         />
+=======
+                            }}
+                            className={`${iconClassName} absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] focus:opacity-100`}
+                            tabIndex={baseTabIndex + 3}
+                            role="button"
+                            aria-label={`Delete item ${i.product}`}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log(
+                                  "Delete icon activated with keyboard for item:",
+                                  i._id,
+                                  "Product:",
+                                  i.product
+                                );
+                                handleDeleteClick(i._id);
+                              }
+                              // Handle Tab from delete icon to next row or Add Item button
+                              if (e.key === "Tab" && !e.shiftKey) {
+                                e.preventDefault();
+                                if (index === items.length - 1) {
+                                  // Last row, move to Add Item button
+                                  if (onLastCellTab) {
+                                    onLastCellTab();
+                                  }
+                                } else {
+                                  // Move to next row's product input
+                                  const nextRowProductInput =
+                                    document.querySelector(
+                                      `input[tabindex="${2 + (index + 1) * 3}"]`
+                                    );
+                                  if (nextRowProductInput) {
+                                    nextRowProductInput.focus();
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                        )}
+>>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                       </div>
                     </td>
                   </tr>
