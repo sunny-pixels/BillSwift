@@ -368,19 +368,11 @@ const Table = ({
                   );
 
                 // Calculate tabIndex for each input field - start from 2 (after search)
-<<<<<<< HEAD
-                // Each row has 3 focusable elements: quantity, mrp, delete (product is now read-only)
-                const baseTabIndex = 2 + index * 3;
-                const quantityTabIndex = baseTabIndex;
-                const mrpTabIndex = baseTabIndex + 1;
-                const deleteTabIndex = baseTabIndex + 2;
-=======
                 // Each row has 3 focusable elements: product, quantity, mrp (delete only for saved items)
                 const baseTabIndex = 2 + index * 3;
                 const productTabIndex = baseTabIndex;
                 const quantityTabIndex = baseTabIndex + 1;
                 const mrpTabIndex = baseTabIndex + 2;
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
 
                 return (
                   <tr
@@ -404,11 +396,6 @@ const Table = ({
 
                     {/* Product editable cell */}
                     <td className={`p-0 text-center`}>
-<<<<<<< HEAD
-                      <div className="w-full h-full px-6 py-4 text-center flex items-center justify-center">
-                        <span className="text-sm font-medium">{i.product || ""}</span>
-                      </div>
-=======
                       <input
                         className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
                           i.isNew &&
@@ -546,7 +533,6 @@ const Table = ({
                         placeholder="Product"
                         tabIndex={productTabIndex}
                       />
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                     </td>
 
                     {/* Quantity editable cell */}
@@ -592,37 +578,6 @@ const Table = ({
                           }
                         }}
                         onKeyDown={(e) => {
-<<<<<<< HEAD
-                          if (e.key === "Tab") {
-                            if (e.shiftKey) {
-                              // Shift + Tab: Move to previous field (search bar if first row)
-                              e.preventDefault();
-                              if (index === 0) {
-                                // First row, move to search bar
-                                if (onLastCellTab) {
-                                  onLastCellTab();
-                                }
-                              } else {
-                                // Move to previous row's MRP field
-                                const prevRowMrpInput = document.querySelector(
-                                  `input[tabindex="${2 + (index - 1) * 3 + 1}"]`
-                                );
-                                if (prevRowMrpInput) {
-                                  prevRowMrpInput.focus();
-                                }
-                              }
-                            } else {
-                              // Normal Tab: Move to MRP field
-                              e.preventDefault();
-                              const mrpInput = document.querySelector(
-                                `input[tabindex="${mrpTabIndex}"]`
-                              );
-                              if (mrpInput) {
-                                mrpInput.focus();
-                              }
-                            }
-                          }
-=======
                           // ESC key: Delete new row if it's incomplete
                           if (e.key === "Escape" && i.isNew) {
                             e.preventDefault();
@@ -643,7 +598,6 @@ const Table = ({
                             }
                           }
 
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
                               // Shift + Enter: Create new row only if current row is complete
@@ -682,21 +636,16 @@ const Table = ({
                               };
                               setItems((prevItems) => [...prevItems, newItem]);
 
-                              // Focus on the new row's quantity input after a short delay
+                              // Focus on the new row's product input after a short delay
                               setTimeout(() => {
-<<<<<<< HEAD
-                                const newRowQuantityInput = document.querySelector(
-                                  `input[tabindex="${2 + items.length * 3}"]`
-=======
                                 const newRowProductInput =
                                   document.querySelector(
                                     `input[tabindex="${2 + items.length * 3}"]`
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                   );
-                                if (newRowQuantityInput) {
-                                  newRowQuantityInput.focus();
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
                                   // Scroll to ensure the new row is visible
-                                  newRowQuantityInput.scrollIntoView({
+                                  newRowProductInput.scrollIntoView({
                                     behavior: "smooth",
                                     block: "center",
                                   });
@@ -778,42 +727,6 @@ const Table = ({
                           }
                         }}
                         onKeyDown={(e) => {
-<<<<<<< HEAD
-                          if (e.key === "Tab") {
-                            if (e.shiftKey) {
-                              // Shift + Tab: Move to quantity field
-                              e.preventDefault();
-                              const quantityInput = document.querySelector(
-                                `input[tabindex="${quantityTabIndex}"]`
-                              );
-                              if (quantityInput) {
-                                quantityInput.focus();
-                              }
-                            } else {
-                              // Normal Tab: Move to next row's quantity field or search bar
-                              e.preventDefault();
-                              if (index === items.length - 1) {
-                                // Last row, move to search bar
-                                if (onLastCellTab) {
-                                  onLastCellTab();
-                                }
-                              } else {
-                                // Move to next row's quantity input
-                                const nextRowQuantityInput = document.querySelector(
-                                  `input[tabindex="${2 + (index + 1) * 3}"]`
-                                );
-                                if (nextRowQuantityInput) {
-                                  nextRowQuantityInput.focus();
-                                  // Scroll to ensure the next row is visible
-                                  nextRowQuantityInput.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                  });
-                                }
-                              }
-                            }
-                          }
-=======
                           // ESC key: Delete new row if it's incomplete
                           if (e.key === "Escape" && i.isNew) {
                             e.preventDefault();
@@ -834,7 +747,6 @@ const Table = ({
                             }
                           }
 
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
                               // Shift + Enter: Create new row only if current row is complete
@@ -873,21 +785,16 @@ const Table = ({
                               };
                               setItems((prevItems) => [...prevItems, newItem]);
 
-                              // Focus on the new row's quantity input after a short delay
+                              // Focus on the new row's product input after a short delay
                               setTimeout(() => {
-<<<<<<< HEAD
-                                const newRowQuantityInput = document.querySelector(
-                                  `input[tabindex="${2 + items.length * 3}"]`
-=======
                                 const newRowProductInput =
                                   document.querySelector(
                                     `input[tabindex="${2 + items.length * 3}"]`
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                   );
-                                if (newRowQuantityInput) {
-                                  newRowQuantityInput.focus();
+                                if (newRowProductInput) {
+                                  newRowProductInput.focus();
                                   // Scroll to ensure the new row is visible
-                                  newRowQuantityInput.scrollIntoView({
+                                  newRowProductInput.scrollIntoView({
                                     behavior: "smooth",
                                     block: "center",
                                   });
@@ -917,20 +824,16 @@ const Table = ({
                                       onLastCellTab();
                                     }
                                   } else {
-                                    // Not last row: Move to next row's quantity input
-                                    const nextRowQuantityInput = document.querySelector(
+                                    // Not last row: Move to next row's product input
+                                    const nextRowProductInput = document.querySelector(
                                         `input[tabindex="${
-<<<<<<< HEAD
-                                        2 + (index + 1) * 3
-=======
                                           2 + (index + 1) * 3
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                                         }"]`
                                       );
-                                    if (nextRowQuantityInput) {
-                                      nextRowQuantityInput.focus();
+                                    if (nextRowProductInput) {
+                                      nextRowProductInput.focus();
                                       // Scroll to ensure the next row is visible
-                                      nextRowQuantityInput.scrollIntoView({
+                                      nextRowProductInput.scrollIntoView({
                                         behavior: "smooth",
                                         block: "center",
                                       });
@@ -993,39 +896,6 @@ const Table = ({
                                 i.product
                               );
                               handleDeleteClick(i._id);
-<<<<<<< HEAD
-                            }
-                            // Handle Tab from delete icon to next row or search bar
-                            if (e.key === "Tab" && !e.shiftKey) {
-                              e.preventDefault();
-                              if (index === items.length - 1) {
-                                // Last row, move to search bar
-                                if (onLastCellTab) {
-                                  onLastCellTab();
-                                }
-                              } else {
-                                // Move to next row's quantity input
-                                const nextRowQuantityInput = document.querySelector(
-                                  `input[tabindex="${2 + (index + 1) * 3}"]`
-                                );
-                                if (nextRowQuantityInput) {
-                                  nextRowQuantityInput.focus();
-                                }
-                              }
-                            }
-                            // Handle Shift+Tab from delete icon to MRP field
-                            if (e.key === "Tab" && e.shiftKey) {
-                              e.preventDefault();
-                              const mrpInput = document.querySelector(
-                                `input[tabindex="${mrpTabIndex}"]`
-                              );
-                              if (mrpInput) {
-                                mrpInput.focus();
-                              }
-                            }
-                          }}
-                        />
-=======
                             }}
                             className={`${iconClassName} absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] focus:opacity-100`}
                             tabIndex={baseTabIndex + 3}
@@ -1065,7 +935,6 @@ const Table = ({
                             }}
                           />
                         )}
->>>>>>> 5566d664a37cd776cdeb4f8ec481be24a383c40c
                       </div>
                     </td>
                   </tr>
