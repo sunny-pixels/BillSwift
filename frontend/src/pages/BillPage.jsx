@@ -503,12 +503,12 @@ const BillPage = () => {
                       return;
                     }
                     
-                    // Focus on the first product's quantity field
-                    const firstQuantityInput = document.querySelector(
+                    // Focus on the first row's first input field (quantity field since product is not editable)
+                    const firstInput = document.querySelector(
                       'input[tabindex="2"]'
                     );
-                    if (firstQuantityInput) {
-                      firstQuantityInput.focus();
+                    if (firstInput) {
+                      firstInput.focus();
                     } else {
                       // Try alternative selector
                       const allInputs = document.querySelectorAll('input[type="number"]');
@@ -538,6 +538,7 @@ const BillPage = () => {
                 items={items} 
                 setItems={setItems}
                 onUpdateItem={updateItem}
+                isProductEditable={false}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
                   isDarkMode 
                     ? '[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]' 

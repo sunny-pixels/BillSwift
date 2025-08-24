@@ -341,6 +341,7 @@ const InventoryPage = () => {
                 highlightedItemId={highlightedItemId}
                 isDarkMode={isDarkMode}
                 onLastCellTab={handleLastTableCellTab}
+                isProductEditable={true}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
                   isDarkMode
                     ? "[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]"
