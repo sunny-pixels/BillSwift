@@ -216,8 +216,14 @@ const Table = ({
   // Persist the item to backend (called on blur/Enter)
   const saveItemById = async (itemId) => {
     try {
+      console.log("saveItemById called with itemId:", itemId);
+      console.log("API_URL:", API_URL);
       const item = items.find((x) => x._id === itemId);
-      if (!item) return Promise.resolve({ success: false });
+      if (!item) {
+        console.log("Item not found:", itemId);
+        return Promise.resolve({ success: false });
+      }
+      console.log("Found item:", item);
 
       // Check if the item is empty (no product name)
       if (!item.product || item.product.trim() === "") {
@@ -237,7 +243,10 @@ const Table = ({
       const quantity = Number(item.quantity || 0);
       const mrp = Number(item.mrp || 0);
 
+      console.log("Converted values - quantity:", quantity, "mrp:", mrp, "isNaN quantity:", isNaN(quantity), "isNaN mrp:", isNaN(mrp));
+
       if (isNaN(quantity) || isNaN(mrp)) {
+        console.log("Invalid numbers detected");
         // Don't save if values are invalid, just update local state
         return Promise.resolve({ success: false });
       }
@@ -249,8 +258,12 @@ const Table = ({
         mrp: mrp,
         netamt: quantity * mrp,
       };
+      
+      console.log("Payload to be sent:", payload);
 
       if (item.isNew) {
+        console.log("Item is new, checking validation...");
+        console.log("Product:", item.product, "Quantity:", quantity, "MRP:", mrp);
         // Only create if we have valid data
         if (item.product && item.product.trim() !== "" && quantity > 0 && mrp > 0) {
           try {
@@ -447,16 +460,14 @@ const Table = ({
                               setFocusedField(null);
                               setFocusedRowId(null);
                             } else {
-                              // Remove from editing items after a delay to allow for save
-                              setTimeout(() => {
-                                setEditingItems(prev => {
-                                  const newSet = new Set(prev);
-                                  newSet.delete(i._id);
-                                  return newSet;
-                                });
-                              }, 100);
+                              // Remove from editing items immediately
+                              setEditingItems(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(i._id);
+                                return newSet;
+                              });
                             }
-                            // Save if we have a product name
+                            // Only save if we have a product name
                             if (i.product && i.product.trim() !== "") {
                               saveItemById(i._id);
                             }
@@ -617,14 +628,12 @@ const Table = ({
                             setFocusedField(null);
                             setFocusedRowId(null);
                           } else {
-                            // Remove from editing items after a delay to allow for save
-                            setTimeout(() => {
-                              setEditingItems(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(i._id);
-                                return newSet;
-                              });
-                            }, 100);
+                            // Remove from editing items immediately
+                            setEditingItems(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(i._id);
+                              return newSet;
+                            });
                           }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
@@ -795,14 +804,12 @@ const Table = ({
                             setFocusedField(null);
                             setFocusedRowId(null);
                           } else {
-                            // Remove from editing items after a delay to allow for save
-                            setTimeout(() => {
-                              setEditingItems(prev => {
-                                const newSet = new Set(prev);
-                                newSet.delete(i._id);
-                                return newSet;
-                              });
-                            }, 100);
+                            // Remove from editing items immediately
+                            setEditingItems(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(i._id);
+                              return newSet;
+                            });
                           }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
@@ -988,10 +995,7 @@ const Table = ({
                               }
                             }}
                           />
-                        ) : (() => {
-                          console.log("Checking editing state for item:", i._id, "editingItems:", Array.from(editingItems), "has:", editingItems.has(i._id));
-                          return editingItems.has(i._id);
-                        })() ? (
+                        ) : editingItems.has(i._id) ? (
                           <AiOutlineCheck
                             onClick={async (e) => {
                               e.preventDefault();
