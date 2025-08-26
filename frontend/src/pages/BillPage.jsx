@@ -33,6 +33,8 @@ const BillPage = () => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme ? savedTheme === 'dark' : true; // Default to dark if no preference
   });
+  // Track the most recently added item for focus navigation
+  const [lastAddedItemId, setLastAddedItemId] = useState(null);
 
   const printButtonRef = useRef(null);
 
@@ -101,6 +103,8 @@ const BillPage = () => {
           : tab
       )
     );
+    // Remember the last added item's id so Tab can jump to it
+    setLastAddedItemId(newItem._id);
   };
 
   // Function to update items (for editing)
@@ -503,14 +507,25 @@ const BillPage = () => {
                       return;
                     }
                     
-                    // Focus on the first row's first input field (quantity field since product is not editable)
+                    // Try to focus the most recently added item's first editable input (quantity)
+                    if (lastAddedItemId) {
+                      const row = document.querySelector(`tr[data-item-id="${lastAddedItemId}"]`);
+                      if (row) {
+                        const qtyInput = row.querySelector('input[type="number"]');
+                        if (qtyInput) {
+                          qtyInput.focus();
+                          return;
+                        }
+                      }
+                    }
+
+                    // Fallback: Focus on the first row's first input field (quantity field)
                     const firstInput = document.querySelector(
                       'input[tabindex="2"]'
                     );
                     if (firstInput) {
                       firstInput.focus();
                     } else {
-                      // Try alternative selector
                       const allInputs = document.querySelectorAll('input[type="number"]');
                       if (allInputs.length > 0) {
                         allInputs[0].focus();

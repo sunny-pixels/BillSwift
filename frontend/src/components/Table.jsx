@@ -445,12 +445,11 @@ const Table = ({
                             updateLocalItemField(i._id, "product", value);
                           }}
                           onFocus={() => {
-                            // Track which field is focused for new rows
+                            // Track which field is focused
+                            setFocusedField("product");
                             if (i.isNew) {
-                              setFocusedField("product");
                               setFocusedRowId(i._id);
                             } else {
-                              // Track editing for existing items (only one at a time)
                               setEditingItemId(i._id);
                             }
                           }}
@@ -469,32 +468,53 @@ const Table = ({
                             }
                           }}
                           onKeyDown={(e) => {
-                            // Arrow key navigation
-                            if (e.key === "ArrowUp") {
-                              e.preventDefault();
-                              if (index > 0) {
-                                // Move to previous row's same field
-                                const prevRowInput = document.querySelector(
-                                  `input[tabindex="${baseTabIndex - (isProductEditable ? 3 : 2)}"]`
-                                );
-                                if (prevRowInput) {
-                                  prevRowInput.focus();
+                            // Alt+WASD navigation for product field
+                            if (e.altKey) {
+                              const step = (isProductEditable ? 3 : 2);
+                              if (e.key.toLowerCase() === "w") {
+                                e.preventDefault();
+                                if (index > 0) {
+                                  const prevBase = 2 + (index - 1) * step;
+                                  const prevRowInput = document.querySelector(
+                                    `input[tabindex="${prevBase}"]`
+                                  );
+                                  if (prevRowInput) {
+                                    prevRowInput.focus();
+                                  }
                                 }
+                                return;
                               }
-                              return;
+                              if (e.key.toLowerCase() === "s") {
+                                e.preventDefault();
+                                if (index < items.length - 1) {
+                                  const nextBase = 2 + (index + 1) * step;
+                                  const nextRowInput = document.querySelector(
+                                    `input[tabindex="${nextBase}"]`
+                                  );
+                                  if (nextRowInput) {
+                                    nextRowInput.focus();
+                                  }
+                                }
+                                return;
+                              }
+                              if (e.key.toLowerCase() === "d") {
+                                e.preventDefault();
+                                // Move right to quantity in the same row
+                                const right = document.querySelector(
+                                  `input[tabindex="${quantityTabIndex}"]`
+                                );
+                                if (right) { right.focus(); }
+                                return;
+                              }
+                              if (e.key.toLowerCase() === "a") {
+                                e.preventDefault();
+                                // No left from product
+                                return;
+                              }
                             }
-                            
-                            if (e.key === "ArrowDown") {
+                            // Disable ArrowUp/ArrowDown hotkeys
+                            if (e.key === "ArrowUp" || e.key === "ArrowDown") {
                               e.preventDefault();
-                              if (index < items.length - 1) {
-                                // Move to next row's same field
-                                const nextRowInput = document.querySelector(
-                                  `input[tabindex="${baseTabIndex + (isProductEditable ? 3 : 2)}"]`
-                                );
-                                if (nextRowInput) {
-                                  nextRowInput.focus();
-                                }
-                              }
                               return;
                             }
 
@@ -579,6 +599,8 @@ const Table = ({
                                 if (quantityInput) {
                                   quantityInput.focus();
                                 }
+                                // Notify user with column name
+                                showToast("Product value updated", "success");
                               }
                             }
                             // Ctrl + Shift: Quick delete current row and move to Add Item
@@ -633,11 +655,10 @@ const Table = ({
                         }}
                         onFocus={() => {
                           // Track which field is focused for new rows
+                          setFocusedField("quantity");
                           if (i.isNew) {
-                            setFocusedField("quantity");
                             setFocusedRowId(i._id);
                           } else {
-                            // Track editing for existing items (only one at a time)
                             console.log("Setting editing state for item (quantity):", i._id);
                             setEditingItemId(i._id);
                           }
@@ -649,11 +670,7 @@ const Table = ({
                             setFocusedRowId(null);
                           } else {
                             // Remove from editing items immediately
-                            setEditingItems(prev => {
-                              const newSet = new Set(prev);
-                              newSet.delete(i._id);
-                              return newSet;
-                            });
+                            setEditingItemId(null);
                           }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
@@ -661,32 +678,61 @@ const Table = ({
                           }
                         }}
                         onKeyDown={(e) => {
-                          // Arrow key navigation
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            if (index > 0) {
-                              // Move to previous row's same field
-                              const prevRowInput = document.querySelector(
-                                `input[tabindex="${baseTabIndex - (isProductEditable ? 3 : 2)}"]`
-                              );
-                              if (prevRowInput) {
-                                prevRowInput.focus();
+                          // Alt+WASD navigation for quantity field
+                          if (e.altKey) {
+                            const step = (isProductEditable ? 3 : 2);
+                            if (e.key.toLowerCase() === "w") {
+                              e.preventDefault();
+                              if (index > 0) {
+                                const prevBase = 2 + (index - 1) * step;
+                                const target = isProductEditable ? prevBase + 1 : prevBase;
+                                const prevRowInput = document.querySelector(
+                                  `input[tabindex="${target}"]`
+                                );
+                                if (prevRowInput) {
+                                  prevRowInput.focus();
+                                }
                               }
+                              return;
                             }
-                            return;
+                            if (e.key.toLowerCase() === "s") {
+                              e.preventDefault();
+                              if (index < items.length - 1) {
+                                const nextBase = 2 + (index + 1) * step;
+                                const target = isProductEditable ? nextBase + 1 : nextBase;
+                                const nextRowInput = document.querySelector(
+                                  `input[tabindex="${target}"]`
+                                );
+                                if (nextRowInput) {
+                                  nextRowInput.focus();
+                                }
+                              }
+                              return;
+                            }
+                            if (e.key.toLowerCase() === "a") {
+                              e.preventDefault();
+                              // Move left to product if editable
+                              if (isProductEditable) {
+                                const left = document.querySelector(
+                                  `input[tabindex="${productTabIndex}"]`
+                                );
+                                if (left) { left.focus(); }
+                              }
+                              return;
+                            }
+                            if (e.key.toLowerCase() === "d") {
+                              e.preventDefault();
+                              // Move right to mrp
+                              const right = document.querySelector(
+                                `input[tabindex="${mrpTabIndex}"]`
+                              );
+                              if (right) { right.focus(); }
+                              return;
+                            }
                           }
-                          
-                          if (e.key === "ArrowDown") {
+                          // Disable ArrowUp/ArrowDown hotkeys
+                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
                             e.preventDefault();
-                            if (index < items.length - 1) {
-                              // Move to next row's same field
-                              const nextRowInput = document.querySelector(
-                                `input[tabindex="${baseTabIndex + (isProductEditable ? 3 : 2)}"]`
-                              );
-                              if (nextRowInput) {
-                                nextRowInput.focus();
-                              }
-                            }
                             return;
                           }
 
@@ -783,6 +829,8 @@ const Table = ({
                                   mrpInput.focus();
                                 }
                               }
+                              // Notify user
+                              showToast("Quantity value updated", "success");
                             }
                           }
                           // Ctrl + Shift: Quick delete current row and move to Add Item
@@ -833,11 +881,10 @@ const Table = ({
                         }}
                         onFocus={() => {
                           // Track which field is focused for new rows
+                          setFocusedField("mrp");
                           if (i.isNew) {
-                            setFocusedField("mrp");
                             setFocusedRowId(i._id);
                           } else {
-                            // Track editing for existing items (only one at a time)
                             console.log("Setting editing state for item (mrp):", i._id);
                             setEditingItemId(i._id);
                           }
@@ -849,11 +896,7 @@ const Table = ({
                             setFocusedRowId(null);
                           } else {
                             // Remove from editing items immediately
-                            setEditingItems(prev => {
-                              const newSet = new Set(prev);
-                              newSet.delete(i._id);
-                              return newSet;
-                            });
+                            setEditingItemId(null);
                           }
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
@@ -861,32 +904,55 @@ const Table = ({
                           }
                         }}
                         onKeyDown={(e) => {
-                          // Arrow key navigation
-                          if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            if (index > 0) {
-                              // Move to previous row's same field
-                              const prevRowInput = document.querySelector(
-                                `input[tabindex="${baseTabIndex - (isProductEditable ? 3 : 2)}"]`
-                              );
-                              if (prevRowInput) {
-                                prevRowInput.focus();
+                          // Alt+WASD navigation for mrp field
+                          if (e.altKey) {
+                            const step = (isProductEditable ? 3 : 2);
+                            if (e.key.toLowerCase() === "w") {
+                              e.preventDefault();
+                              if (index > 0) {
+                                const prevBase = 2 + (index - 1) * step;
+                                const target = isProductEditable ? prevBase + 2 : prevBase + 1;
+                                const prevRowInput = document.querySelector(
+                                  `input[tabindex="${target}"]`
+                                );
+                                if (prevRowInput) {
+                                  prevRowInput.focus();
+                                }
                               }
+                              return;
                             }
-                            return;
+                            if (e.key.toLowerCase() === "s") {
+                              e.preventDefault();
+                              if (index < items.length - 1) {
+                                const nextBase = 2 + (index + 1) * step;
+                                const target = isProductEditable ? nextBase + 2 : nextBase + 1;
+                                const nextRowInput = document.querySelector(
+                                  `input[tabindex="${target}"]`
+                                );
+                                if (nextRowInput) {
+                                  nextRowInput.focus();
+                                }
+                              }
+                              return;
+                            }
+                            if (e.key.toLowerCase() === "a") {
+                              e.preventDefault();
+                              // Move left to quantity
+                              const left = document.querySelector(
+                                `input[tabindex="${quantityTabIndex}"]`
+                              );
+                              if (left) { left.focus(); }
+                              return;
+                            }
+                            if (e.key.toLowerCase() === "d") {
+                              e.preventDefault();
+                              // No right from mrp
+                              return;
+                            }
                           }
-                          
-                          if (e.key === "ArrowDown") {
+                          // Disable ArrowUp/ArrowDown hotkeys
+                          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
                             e.preventDefault();
-                            if (index < items.length - 1) {
-                              // Move to next row's same field
-                              const nextRowInput = document.querySelector(
-                                `input[tabindex="${baseTabIndex + (isProductEditable ? 3 : 2)}"]`
-                              );
-                              if (nextRowInput) {
-                                nextRowInput.focus();
-                              }
-                            }
                             return;
                           }
 
@@ -964,51 +1030,32 @@ const Table = ({
                                 }
                               }, 100);
                                                           } else {
-                                // Normal Enter: Save and show success message if item is new
+                                // Normal Enter: Save and show MRP toast for both new and existing items
                                 e.preventDefault();
-                                if (
-                                  i.isNew &&
-                                  i.product &&
-                                  i.product.trim() !== "" &&
-                                  i.quantity > 0 &&
-                                  i.mrp > 0
-                                ) {
-                                  // This is a new item with valid data, save it and show success
-                                  saveItemById(i._id).then((result) => {
-                                    if (result.success) {
-                                      showToast(
-                                        "Item added successfully!",
-                                        "success"
-                                      );
+                                saveItemById(i._id).then(() => {
+                                  showToast("MRP value updated", "success");
+                                  if (index === items.length - 1) {
+                                    // Last row: Move to search bar
+                                    if (onLastCellTab) {
+                                      onLastCellTab();
                                     }
-                                    if (index === items.length - 1) {
-                                      // Last row: Move to search bar
-                                      if (onLastCellTab) {
-                                        onLastCellTab();
-                                      }
-                                    } else {
-                                      // Not last row: Move to next row's first input field
-                                      const nextRowFirstInput = document.querySelector(
-                                          `input[tabindex="${
-                                            2 + (index + 1) * (isProductEditable ? 3 : 2)
-                                          }"]`
-                                        );
-                                      if (nextRowFirstInput) {
-                                        nextRowFirstInput.focus();
-                                        // Scroll to ensure the next row is visible
-                                        nextRowFirstInput.scrollIntoView({
-                                          behavior: "smooth",
-                                          block: "center",
-                                        });
-                                      }
+                                  } else {
+                                    // Not last row: Move to next row's first input field
+                                    const nextRowFirstInput = document.querySelector(
+                                      `input[tabindex="${2 + (index + 1) * (isProductEditable ? 3 : 2)}"]`
+                                    );
+                                    if (nextRowFirstInput) {
+                                      nextRowFirstInput.focus();
+                                      // Scroll to ensure the next row is visible
+                                      nextRowFirstInput.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "center",
+                                      });
                                     }
-                                  });
-                                                              } else {
-                                // Not a new item or invalid data, just blur
-                                e.currentTarget.blur();
+                                  }
+                                });
                               }
                             }
-                          }
                             
                             // Tab key: Move to tick button
                             if (e.key === "Tab" && !e.shiftKey) {
@@ -1023,21 +1070,21 @@ const Table = ({
                             }
                             
                             // Ctrl + Shift: Quick delete current row and move to Add Item
-                          if (e.ctrlKey && e.shiftKey) {
-                            e.preventDefault();
-                            console.log(
-                              "Ctrl+Shift pressed - quick deleting row:",
-                              i._id
-                            );
-                            // Delete the current row
-                            setItems((prevItems) =>
-                              prevItems.filter((item) => item._id !== i._id)
-                            );
-                            // Move focus to search bar
-                            if (onLastCellTab) {
-                              onLastCellTab();
+                            if (e.ctrlKey && e.shiftKey) {
+                              e.preventDefault();
+                              console.log(
+                                "Ctrl+Shift pressed - quick deleting row:",
+                                i._id
+                              );
+                              // Delete the current row
+                              setItems((prevItems) =>
+                                prevItems.filter((item) => item._id !== i._id)
+                              );
+                              // Move focus to search bar
+                              if (onLastCellTab) {
+                                onLastCellTab();
+                              }
                             }
-                          }
                         }}
                         placeholder="MRP"
                         tabIndex={mrpTabIndex}
@@ -1057,7 +1104,8 @@ const Table = ({
                               console.log("Tick button clicked for item:", i._id);
                               const result = await saveItemById(i._id);
                               if (result.success) {
-                                showToast("Item added successfully!", "success");
+                                const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                showToast(`${header} value updated`, "success");
                               }
                             }}
                             className={`absolute right-4 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] ${
@@ -1075,7 +1123,8 @@ const Table = ({
                                 console.log("Tick button activated with keyboard for item:", i._id);
                                 saveItemById(i._id).then((result) => {
                                   if (result.success) {
-                                    showToast("Item added successfully!", "success");
+                                    const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                    showToast(`${header} value updated`, "success");
                                   }
                                 });
                               }
@@ -1089,7 +1138,8 @@ const Table = ({
                               console.log("Save button clicked for item:", i._id);
                               const result = await saveItemById(i._id);
                               if (result.success) {
-                                showToast("Item updated successfully!", "success");
+                                const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                showToast(`${header} value updated`, "success");
                                 setEditingItemId(null);
                               }
                             }}
@@ -1108,8 +1158,8 @@ const Table = ({
                                 console.log("Save button activated with keyboard for item:", i._id);
                                 saveItemById(i._id).then((result) => {
                                   if (result.success) {
-                                    showToast("Item updated successfully!", "success");
-                                    setEditingItemId(null);
+                                    const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                    showToast(`${header} value updated`, "success");
                                   }
                                 });
                               }
@@ -1221,9 +1271,6 @@ const Table = ({
       .custom-scroll::-webkit-scrollbar {
         display: none; /* Chrome, Safari, Opera */
       }
-
-
-
 
       /* Remove spinner arrows from number inputs (Chrome, Safari, Edge) */
       input[type="number"]::-webkit-outer-spin-button,

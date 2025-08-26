@@ -87,7 +87,7 @@ const HomePage = () => {
 
         {/* Show user button if authenticated */}
         {/* Commented out for now
-        {user && (
+          {user && (
           <div className="mt-6 flex justify-center">
             <UserButton />
           </div>
