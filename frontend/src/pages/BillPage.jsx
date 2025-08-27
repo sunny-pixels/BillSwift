@@ -37,6 +37,7 @@ const BillPage = () => {
   const [lastAddedItemId, setLastAddedItemId] = useState(null);
 
   const printButtonRef = useRef(null);
+  const connectWhatsAppButtonRef = useRef(null);
 
   const triggerPrintWithAnimation = () => {
     const button = printButtonRef.current;
@@ -570,10 +571,20 @@ const BillPage = () => {
                 cellClassName="px-6 py-4 rounded-none"
                 onDeleteClick={handleDeleteClick}
                 onLastCellTab={() => {
-                  // Focus the search bar when tabbing from the last cell
-                  const searchInput = document.querySelector('input[placeholder="Search for products..."]');
-                  if (searchInput) {
-                    searchInput.focus();
+                  console.log("onLastCellTab called, whatsappStatus:", whatsappStatus);
+                  // Focus the Connect WhatsApp button when tabbing from the last cell
+                  if (whatsappStatus === 'connected') {
+                    // If WhatsApp is connected, focus the Print Bill button directly
+                    console.log("WhatsApp connected, focusing Print button");
+                    if (printButtonRef.current) {
+                      printButtonRef.current.focus();
+                    }
+                  } else {
+                    // If WhatsApp is not connected, focus the Connect WhatsApp button
+                    console.log("WhatsApp not connected, focusing Connect WhatsApp button");
+                    if (connectWhatsAppButtonRef.current) {
+                      connectWhatsAppButtonRef.current.focus();
+                    }
                   }
                 }}
               />
@@ -589,8 +600,19 @@ const BillPage = () => {
             </div>
           ) : (
             <button 
+              ref={connectWhatsAppButtonRef}
+              tabIndex={0}
               onClick={() => setShowQRModal(true)}
-              className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center ${
+              onKeyDown={(e) => {
+                if (e.key === "Tab" && !e.shiftKey) {
+                  e.preventDefault();
+                  // Move focus to Print Bill button
+                  if (printButtonRef.current) {
+                    printButtonRef.current.focus();
+                  }
+                }
+              }}
+              className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
                 isDarkMode 
                   ? 'bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white' 
                   : 'bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]'
@@ -616,8 +638,19 @@ const BillPage = () => {
                   </div>
                   <button
                     ref={printButtonRef}
+                    tabIndex={0}
                     onClick={triggerPrintWithAnimation}
-                    className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform"
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab" && !e.shiftKey) {
+                        e.preventDefault();
+                        // Move focus back to search bar
+                        const searchInput = document.querySelector('input[placeholder="Search for products..."]');
+                        if (searchInput) {
+                          searchInput.focus();
+                        }
+                      }
+                    }}
+                    className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 focus:bg-white/40 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform hover:scale-105 focus:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] focus:shadow-[0_0_30px_rgba(255,255,255,0.8)]"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

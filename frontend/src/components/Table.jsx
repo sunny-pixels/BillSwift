@@ -29,12 +29,8 @@ const Table = ({
   });
 
   // State to track which field is focused for new rows
-  const [focusedField, setFocusedField] = useState(null);
-  const [focusedRowId, setFocusedRowId] = useState(null);
-  
-  // State to track which existing item is being edited (only one at a time)
   const [editingItemId, setEditingItemId] = useState(null);
-
+  
   // Toast notification component
   const Toast = ({ message, type, onClose }) => {
     useEffect(() => {
@@ -261,91 +257,37 @@ const Table = ({
       
       console.log("Payload to be sent:", payload);
 
-      if (item.isNew) {
-        console.log("Item is new, checking validation...");
-        console.log("Product:", item.product, "Quantity:", quantity, "MRP:", mrp);
-        // Only create if we have valid data
-        if (item.product && item.product.trim() !== "" && quantity > 0 && mrp > 0) {
-          try {
-            console.log("Creating new item with payload:", payload);
-            const response = await axios.post(`${API_URL}/createItem`, payload);
-            console.log("Create response:", response.data);
-            
-            // Update local state with the real item from backend, preserving the current values
-            const updatedItem = {
-              ...item,
-                      ...response.data,
-                      isNew: false,
-                      // Ensure the display values are preserved
-              product: item.product,
-              quantity: item.quantity,
-              mrp: item.mrp,
-              netamt: item.netamt,
-            };
-            
-            if (onUpdateItem) {
-              onUpdateItem(itemId, updatedItem);
-            } else {
-              setItems((prev) =>
-                prev.map((it) =>
-                  it._id === itemId ? updatedItem : it
-                )
-              );
-            }
-            return Promise.resolve({ success: true });
-          } catch (err) {
-            console.error("Failed to create item:", err);
-            showToast("Failed to create item. Please try again.", "error");
-            // Don't remove the row on creation failure, let user retry
-            return Promise.resolve({ success: false });
-          }
+      // Update existing item
+      try {
+        await axios.put(`${API_URL}/updateItem/${itemId}`, {
+          ...payload,
+          _id: itemId,
+        });
+        // Normalize numbers in local state after save, preserving display values
+        const updatedItem = {
+          ...item,
+          ...payload,
+          // Ensure the display values are preserved
+          product: item.product,
+          quantity: item.quantity,
+          mrp: item.mrp,
+          netamt: item.netamt,
+        };
+        
+        if (onUpdateItem) {
+          onUpdateItem(itemId, updatedItem);
         } else {
-          console.log("Item validation failed - product:", item.product, "quantity:", quantity, "mrp:", mrp);
-          if (!item.product || item.product.trim() === "") {
-            showToast("Please enter a product name.", "error");
-          } else if (quantity <= 0) {
-            showToast("Please enter a valid quantity (greater than 0).", "error");
-          } else if (mrp <= 0) {
-            showToast("Please enter a valid MRP (greater than 0).", "error");
-          } else {
-            showToast("Please fill in all required fields.", "error");
-          }
-          // Keep the item in local state but don't save to backend
+        setItems((prev) =>
+          prev.map((it) =>
+              it._id === itemId ? updatedItem : it
+            )
+          );
+        }
+        return Promise.resolve({ success: true });
+      } catch (err) {
+        console.log("Failed to update item:", err);
+        // Don't remove the row on update failure, let user retry
         return Promise.resolve({ success: false });
-        }
-      } else {
-        // Update existing item
-        try {
-          await axios.put(`${API_URL}/updateItem/${itemId}`, {
-            ...payload,
-            _id: itemId,
-          });
-          // Normalize numbers in local state after save, preserving display values
-          const updatedItem = {
-            ...item,
-            ...payload,
-            // Ensure the display values are preserved
-            product: item.product,
-            quantity: item.quantity,
-            mrp: item.mrp,
-            netamt: item.netamt,
-          };
-          
-          if (onUpdateItem) {
-            onUpdateItem(itemId, updatedItem);
-          } else {
-          setItems((prev) =>
-            prev.map((it) =>
-                it._id === itemId ? updatedItem : it
-              )
-            );
-          }
-          return Promise.resolve({ success: true });
-        } catch (err) {
-          console.log("Failed to update item:", err);
-          // Don't remove the row on update failure, let user retry
-          return Promise.resolve({ success: false });
-        }
       }
     } catch (err) {
       console.log("Unexpected error:", err);
@@ -432,11 +374,7 @@ const Table = ({
                       {isProductEditable ? (
                         <input
                           className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
-                            i.isNew &&
-                            focusedField === "product" &&
-                            focusedRowId === i._id
-                              ? "bg-blue-50/20"
-                              : ""
+                            editingItemId === i._id ? "bg-blue-50/20" : ""
                           }`}
                           type="text"
                           value={i.product || ""}
@@ -446,22 +384,12 @@ const Table = ({
                           }}
                           onFocus={() => {
                             // Track which field is focused
-                            setFocusedField("product");
-                            if (i.isNew) {
-                              setFocusedRowId(i._id);
-                            } else {
-                              setEditingItemId(i._id);
-                            }
+                            setEditingItemId(i._id);
                           }}
                           onBlur={() => {
                             // Reset focused field
-                            if (i.isNew && focusedRowId === i._id) {
-                              setFocusedField(null);
-                              setFocusedRowId(null);
-                            } else {
-                              // Remove from editing items immediately
-                              setEditingItemId(null);
-                            }
+                            // Remove from editing items immediately
+                            setEditingItemId(null);
                             // Only save if we have a product name
                             if (i.product && i.product.trim() !== "") {
                               saveItemById(i._id);
@@ -519,52 +447,18 @@ const Table = ({
                             }
 
                             // ESC key: Delete new row if it's incomplete
-                            if (e.key === "Escape" && i.isNew) {
+                            if (e.key === "Escape") {
                               e.preventDefault();
-                              // Check if the row is empty or incomplete
-                              if (
-                                !i.product ||
-                                i.product.trim() === "" ||
-                                !i.quantity ||
-                                i.quantity <= 0 ||
-                                !i.mrp ||
-                                i.mrp <= 0
-                              ) {
-                                setItems((prevItems) =>
-                                  prevItems.filter((item) => item._id !== i._id)
-                                );
-                                showToast("New row cancelled", "success");
-                                return;
-                              }
+                              setEditingItemId(null);
+                              return;
                             }
 
                             if (e.key === "Enter") {
                               if (e.shiftKey) {
-                                // Shift + Enter: Create new row only if current row is complete
+                                // Shift + Enter: Create new row
                                 e.preventDefault();
 
-                                // Check if there's already an incomplete new row
-                                const incompleteNewRow = items.find(
-                                  (item) =>
-                                    item.isNew &&
-                                    (!item.product ||
-                                      item.product.trim() === "" ||
-                                      !item.quantity ||
-                                      item.quantity <= 0 ||
-                                      !item.mrp ||
-                                      item.mrp <= 0)
-                                );
-
-                                if (incompleteNewRow) {
-                                  // Show warning toast
-                                  showToast(
-                                    "Please complete the current row first!",
-                                    "error"
-                                  );
-                                  return;
-                                }
-
-                                // Create a new empty item
+                                // Add new empty row
                                 const newItem = {
                                   _id: `temp_${Date.now()}`,
                                   itemCode: `ITEM${items.length + 1}`,
@@ -572,24 +466,8 @@ const Table = ({
                                   quantity: "",
                                   mrp: "",
                                   netamt: 0,
-                                  isNew: true,
                                 };
                                 setItems((prevItems) => [...prevItems, newItem]);
-
-                                // Focus on the new row's product input after a short delay
-                                setTimeout(() => {
-                                  const newRowProductInput = document.querySelector(
-                                    `input[tabindex="${2 + items.length * 3}"]`
-                                  );
-                                  if (newRowProductInput) {
-                                    newRowProductInput.focus();
-                                    // Scroll to ensure the new row is visible
-                                    newRowProductInput.scrollIntoView({
-                                      behavior: "smooth",
-                                      block: "center",
-                                    });
-                                  }
-                                }, 100);
                               } else {
                                 // Normal Enter: Save and move to quantity field
                                 e.preventDefault();
@@ -633,11 +511,7 @@ const Table = ({
                     <td className={`p-0 text-center w-[20%]`}>
                       <input
                         className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
-                          i.isNew &&
-                          focusedField === "quantity" &&
-                          focusedRowId === i._id
-                            ? "bg-blue-50/20"
-                            : ""
+                          editingItemId === i._id ? "bg-blue-50/20" : ""
                         }`}
                         type="number"
                         min="0"
@@ -655,23 +529,12 @@ const Table = ({
                         }}
                         onFocus={() => {
                           // Track which field is focused for new rows
-                          setFocusedField("quantity");
-                          if (i.isNew) {
-                            setFocusedRowId(i._id);
-                          } else {
-                            console.log("Setting editing state for item (quantity):", i._id);
-                            setEditingItemId(i._id);
-                          }
+                          setEditingItemId(i._id);
                         }}
                         onBlur={() => {
                           // Reset focused field
-                          if (i.isNew && focusedRowId === i._id) {
-                            setFocusedField(null);
-                            setFocusedRowId(null);
-                          } else {
-                            // Remove from editing items immediately
-                            setEditingItemId(null);
-                          }
+                          // Remove from editing items immediately
+                          setEditingItemId(null);
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
                             saveItemById(i._id);
@@ -737,52 +600,18 @@ const Table = ({
                           }
 
                           // ESC key: Delete new row if it's incomplete
-                          if (e.key === "Escape" && i.isNew) {
+                          if (e.key === "Escape") {
                             e.preventDefault();
-                            // Check if the row is empty or incomplete
-                            if (
-                              !i.product ||
-                              i.product.trim() === "" ||
-                              !i.quantity ||
-                              i.quantity <= 0 ||
-                              !i.mrp ||
-                              i.mrp <= 0
-                            ) {
-                              setItems((prevItems) =>
-                                prevItems.filter((item) => item._id !== i._id)
-                              );
-                              showToast("New row cancelled", "success");
-                              return;
-                            }
+                            setEditingItemId(null);
+                            return;
                           }
 
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
-                              // Shift + Enter: Create new row only if current row is complete
+                              // Shift + Enter: Create new row
                               e.preventDefault();
 
-                              // Check if there's already an incomplete new row
-                              const incompleteNewRow = items.find(
-                                (item) =>
-                                  item.isNew &&
-                                  (!item.product ||
-                                    item.product.trim() === "" ||
-                                    !item.quantity ||
-                                    item.quantity <= 0 ||
-                                    !item.mrp ||
-                                    item.mrp <= 0)
-                              );
-
-                              if (incompleteNewRow) {
-                                // Show warning toast
-                                showToast(
-                                  "Please complete the current row first!",
-                                  "error"
-                                );
-                                return;
-                              }
-
-                              // Create a new empty item
+                              // Add new empty row
                               const newItem = {
                                 _id: `temp_${Date.now()}`,
                                 itemCode: `ITEM${items.length + 1}`,
@@ -790,7 +619,6 @@ const Table = ({
                                 quantity: "",
                                 mrp: "",
                                 netamt: 0,
-                                isNew: true,
                               };
                               setItems((prevItems) => [...prevItems, newItem]);
 
@@ -859,11 +687,7 @@ const Table = ({
                     <td className={`p-0 text-center w-[20%]`}>
                       <input
                         className={`w-full h-full px-6 py-4 text-center focus:outline-none border border-transparent focus:border-[#3379E9] rounded-none ${
-                          i.isNew &&
-                          focusedField === "mrp" &&
-                          focusedRowId === i._id
-                            ? "bg-blue-50/20"
-                            : ""
+                          editingItemId === i._id ? "bg-blue-50/20" : ""
                         }`}
                         type="number"
                         min="0"
@@ -881,23 +705,12 @@ const Table = ({
                         }}
                         onFocus={() => {
                           // Track which field is focused for new rows
-                          setFocusedField("mrp");
-                          if (i.isNew) {
-                            setFocusedRowId(i._id);
-                          } else {
-                            console.log("Setting editing state for item (mrp):", i._id);
-                            setEditingItemId(i._id);
-                          }
+                          setEditingItemId(i._id);
                         }}
                         onBlur={() => {
                           // Reset focused field
-                          if (i.isNew && focusedRowId === i._id) {
-                            setFocusedField(null);
-                            setFocusedRowId(null);
-                          } else {
-                            // Remove from editing items immediately
-                            setEditingItemId(null);
-                          }
+                          // Remove from editing items immediately
+                          setEditingItemId(null);
                           // Only save if we have a product name
                           if (i.product && i.product.trim() !== "") {
                             saveItemById(i._id);
@@ -957,52 +770,18 @@ const Table = ({
                           }
 
                           // ESC key: Delete new row if it's incomplete
-                          if (e.key === "Escape" && i.isNew) {
+                          if (e.key === "Escape") {
                             e.preventDefault();
-                            // Check if the row is empty or incomplete
-                            if (
-                              !i.product ||
-                              i.product.trim() === "" ||
-                              !i.quantity ||
-                              i.quantity <= 0 ||
-                              !i.mrp ||
-                              i.mrp <= 0
-                            ) {
-                              setItems((prevItems) =>
-                                prevItems.filter((item) => item._id !== i._id)
-                              );
-                              showToast("New row cancelled", "success");
-                              return;
-                            }
+                            setEditingItemId(null);
+                            return;
                           }
 
                           if (e.key === "Enter") {
                             if (e.shiftKey) {
-                              // Shift + Enter: Create new row only if current row is complete
+                              // Shift + Enter: Create new row
                               e.preventDefault();
 
-                              // Check if there's already an incomplete new row
-                              const incompleteNewRow = items.find(
-                                (item) =>
-                                  item.isNew &&
-                                  (!item.product ||
-                                    item.product.trim() === "" ||
-                                    !item.quantity ||
-                                    item.quantity <= 0 ||
-                                    !item.mrp ||
-                                    item.mrp <= 0)
-                              );
-
-                              if (incompleteNewRow) {
-                                // Show warning toast
-                                showToast(
-                                  "Please complete the current row first!",
-                                  "error"
-                                );
-                                return;
-                              }
-
-                              // Create a new empty item
+                              // Add new empty row
                               const newItem = {
                                 _id: `temp_${Date.now()}`,
                                 itemCode: `ITEM${items.length + 1}`,
@@ -1010,7 +789,6 @@ const Table = ({
                                 quantity: "",
                                 mrp: "",
                                 netamt: 0,
-                                isNew: true,
                               };
                               setItems((prevItems) => [...prevItems, newItem]);
 
@@ -1029,62 +807,62 @@ const Table = ({
                                   });
                                 }
                               }, 100);
-                                                          } else {
-                                // Normal Enter: Save and show MRP toast for both new and existing items
-                                e.preventDefault();
-                                saveItemById(i._id).then(() => {
-                                  showToast("MRP value updated", "success");
-                                  if (index === items.length - 1) {
-                                    // Last row: Move to search bar
-                                    if (onLastCellTab) {
-                                      onLastCellTab();
-                                    }
-                                  } else {
-                                    // Not last row: Move to next row's first input field
-                                    const nextRowFirstInput = document.querySelector(
-                                      `input[tabindex="${2 + (index + 1) * (isProductEditable ? 3 : 2)}"]`
-                                    );
-                                    if (nextRowFirstInput) {
-                                      nextRowFirstInput.focus();
-                                      // Scroll to ensure the next row is visible
-                                      nextRowFirstInput.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "center",
-                                      });
-                                    }
+                            } else {
+                              // Normal Enter: Save and show MRP toast for both new and existing items
+                              e.preventDefault();
+                              saveItemById(i._id).then(() => {
+                                showToast("MRP value updated", "success");
+                                if (index === items.length - 1) {
+                                  // Last row: Move to search bar
+                                  if (onLastCellTab) {
+                                    onLastCellTab();
                                   }
-                                });
-                              }
+                                } else {
+                                  // Not last row: Move to next row's first input field
+                                  const nextRowFirstInput = document.querySelector(
+                                    `input[tabindex="${2 + (index + 1) * (isProductEditable ? 3 : 2)}"]`
+                                  );
+                                  if (nextRowFirstInput) {
+                                    nextRowFirstInput.focus();
+                                    // Scroll to ensure the next row is visible
+                                    nextRowFirstInput.scrollIntoView({
+                                      behavior: "smooth",
+                                      block: "center",
+                                    });
+                                  }
+                                }
+                              });
                             }
-                            
-                            // Tab key: Move to tick button
-                            if (e.key === "Tab" && !e.shiftKey) {
-                              e.preventDefault();
-                              const tickButton = document.querySelector(
-                                `[tabindex="${baseTabIndex + (isProductEditable ? 3 : 2)}"]`
-                              );
-                              if (tickButton) {
-                                tickButton.focus();
-                              }
-                              return;
+                          }
+                          
+                          // Tab key: Move to tick button
+                          if (e.key === "Tab" && !e.shiftKey) {
+                            e.preventDefault();
+                            const tickButton = document.querySelector(
+                              `[tabindex="${baseTabIndex + (isProductEditable ? 3 : 2)}"]`
+                            );
+                            if (tickButton) {
+                              tickButton.focus();
                             }
-                            
-                            // Ctrl + Shift: Quick delete current row and move to Add Item
-                            if (e.ctrlKey && e.shiftKey) {
-                              e.preventDefault();
-                              console.log(
-                                "Ctrl+Shift pressed - quick deleting row:",
-                                i._id
-                              );
-                              // Delete the current row
-                              setItems((prevItems) =>
-                                prevItems.filter((item) => item._id !== i._id)
-                              );
-                              // Move focus to search bar
-                              if (onLastCellTab) {
-                                onLastCellTab();
-                              }
+                            return;
+                          }
+                          
+                          // Ctrl + Shift: Quick delete current row and move to Add Item
+                          if (e.ctrlKey && e.shiftKey) {
+                            e.preventDefault();
+                            console.log(
+                              "Ctrl+Shift pressed - quick deleting row:",
+                              i._id
+                            );
+                            // Delete the current row
+                            setItems((prevItems) =>
+                              prevItems.filter((item) => item._id !== i._id)
+                            );
+                            // Move focus to search bar
+                            if (onLastCellTab) {
+                              onLastCellTab();
                             }
+                          }
                         }}
                         placeholder="MRP"
                         tabIndex={mrpTabIndex}
@@ -1096,41 +874,7 @@ const Table = ({
                     <td className={`p-0 text-center relative w-[20%]`}>
                       <div className="w-full h-full px-6 py-4 flex items-center justify-center">
                         <span>{i.netamt}</span>
-                        {i.isNew ? (
-                          <AiOutlineCheck
-                            onClick={async (e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log("Tick button clicked for item:", i._id);
-                              const result = await saveItemById(i._id);
-                              if (result.success) {
-                                const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
-                                showToast(`${header} value updated`, "success");
-                              }
-                            }}
-                            className={`absolute right-4 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 rounded-sm hover:scale-110 focus:scale-110 focus:drop-shadow-[0_0_10px_rgba(51,121,233,0.6)] ${
-                              focusedField === "mrp" && focusedRowId === i._id
-                                ? "opacity-100 text-green-500"
-                                : "opacity-0 group-hover:opacity-100 text-gray-400"
-                            }`}
-                            tabIndex={-1}
-                            role="button"
-                            aria-label={`Confirm new item ${i.product}`}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log("Tick button activated with keyboard for item:", i._id);
-                                saveItemById(i._id).then((result) => {
-                                  if (result.success) {
-                                    const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
-                                    showToast(`${header} value updated`, "success");
-                                  }
-                                });
-                              }
-                            }}
-                          />
-                        ) : editingItemId === i._id ? (
+                        {editingItemId === i._id ? (
                           <AiOutlineCheck
                             onClick={async (e) => {
                               e.preventDefault();
@@ -1138,7 +882,7 @@ const Table = ({
                               console.log("Save button clicked for item:", i._id);
                               const result = await saveItemById(i._id);
                               if (result.success) {
-                                const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                const header = "Value";
                                 showToast(`${header} value updated`, "success");
                                 setEditingItemId(null);
                               }
@@ -1158,7 +902,7 @@ const Table = ({
                                 console.log("Save button activated with keyboard for item:", i._id);
                                 saveItemById(i._id).then((result) => {
                                   if (result.success) {
-                                    const header = focusedField === "product" ? "Product" : (focusedField === "quantity" ? "Quantity" : (focusedField === "mrp" ? "MRP" : "Value"));
+                                    const header = "Value";
                                     showToast(`${header} value updated`, "success");
                                   }
                                 });
@@ -1190,6 +934,29 @@ const Table = ({
                                   }
                                 }
                               }
+                             
+                             // Handle Tab from tick button to next row or Connect WhatsApp button
+                             if (e.key === "Tab" && !e.shiftKey) {
+                               e.preventDefault();
+                               console.log("Tab pressed from tick button, index:", index, "items.length:", items.length);
+                               if (index === items.length - 1) {
+                                 // Last row, move to Connect WhatsApp button
+                                 console.log("Last row, calling onLastCellTab");
+                                 if (onLastCellTab) {
+                                   onLastCellTab();
+                                 }
+                               } else {
+                                 // Move to next row's first input field
+                                 console.log("Not last row, moving to next row");
+                                 const nextRowFirstInput =
+                                   document.querySelector(
+                                     `input[tabindex="${2 + (index + 1) * (isProductEditable ? 3 : 2)}"]`
+                                   );
+                                 if (nextRowFirstInput) {
+                                   nextRowFirstInput.focus();
+                                 }
+                               }
+                             }
                             }}
                           />
                         ) : (
