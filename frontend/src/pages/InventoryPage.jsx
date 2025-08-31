@@ -104,7 +104,7 @@ const InventoryPage = () => {
     // Create a new empty item instead of opening modal
     const newItem = {
       _id: `temp_${Date.now()}`, // Temporary ID for new items
-      itemCode: `ITEM${items.length + 1}`,
+      itemCode: `ITEM${Date.now()}`, // Ensure unique itemCode
       product: "",
       quantity: "",
       mrp: "",
@@ -181,6 +181,79 @@ const InventoryPage = () => {
     const total = items.reduce((sum, item) => sum + (item.netamt || 0), 0);
     setTotalValue(total);
   }, [items]);
+
+  // Global keyboard event listener for Shift+Enter to add new item and ESC to discard incomplete new items
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // Check if Shift+Enter is pressed
+      if (e.shiftKey && e.key === "Enter") {
+        // Don't trigger if we're in an input field that already handles this
+        const activeElement = document.activeElement;
+        const isInTableInput =
+          activeElement &&
+          (activeElement.tagName === "INPUT" ||
+            activeElement.tagName === "TEXTAREA" ||
+            activeElement.closest("table"));
+
+        // Only trigger if we're not in a table input (to avoid double triggering)
+        if (!isInTableInput) {
+          e.preventDefault();
+          handleAddClick();
+        }
+      }
+
+      // Check if ESC is pressed to discard incomplete new items
+      if (e.key === "Escape") {
+        // Don't trigger if we're in an input field that already handles this
+        const activeElement = document.activeElement;
+        const isInTableInput =
+          activeElement &&
+          (activeElement.tagName === "INPUT" ||
+            activeElement.tagName === "TEXTAREA" ||
+            activeElement.closest("table"));
+
+        // Only trigger if we're not in a table input (to avoid double triggering)
+        if (!isInTableInput) {
+          // Find incomplete new items and remove them
+          const incompleteNewItems = items.filter(
+            (item) =>
+              item.isNew &&
+              (!item.product ||
+                item.product.trim() === "" ||
+                !item.quantity ||
+                item.quantity <= 0 ||
+                !item.mrp ||
+                item.mrp <= 0)
+          );
+
+          if (incompleteNewItems.length > 0) {
+            e.preventDefault();
+            // Remove all incomplete new items
+            setItems((prevItems) =>
+              prevItems.filter(
+                (item) =>
+                  !incompleteNewItems.some(
+                    (incomplete) => incomplete._id === item._id
+                  )
+              )
+            );
+            showToast(
+              `${incompleteNewItems.length} incomplete item(s) discarded`,
+              "success"
+            );
+          }
+        }
+      }
+    };
+
+    // Add event listener to document
+    document.addEventListener("keydown", handleGlobalKeyDown, true); // Use capture phase
+
+    // Cleanup function
+    return () => {
+      document.removeEventListener("keydown", handleGlobalKeyDown, true);
+    };
+  }, [items]); // Include items in dependency array since handleAddClick uses it
 
   // Handle Tab from last table cell - move to Add Item button
   const handleLastTableCellTab = () => {
@@ -328,12 +401,6 @@ const InventoryPage = () => {
 
           {/* Table Section */}
           <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
-            {/* Keyboard Navigation Instructions */}
-            <div
-              className={`mb-4 text-sm ${
-                isDarkMode ? "text-[#767c8f]" : "text-[#767c8f]"
-              }`}
-            ></div>
             <div>
               <Table
                 items={items}
@@ -372,7 +439,7 @@ const InventoryPage = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 items-center">
           <button
             ref={addItemRef}
             onClick={handleAddClick}
