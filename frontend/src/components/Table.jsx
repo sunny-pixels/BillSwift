@@ -40,7 +40,7 @@ const Table = ({
     useEffect(() => {
       const timer = setTimeout(() => {
         onClose();
-      }, 500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }, [onClose]);
@@ -486,6 +486,7 @@ const Table = ({
                           } ${i.isNew ? "bg-blue-50/10" : ""}`}
                           type="text"
                           value={i.product || ""}
+                          data-item-id={i.itemCode || i._id}
                           onChange={(e) => {
                             const value = e.target.value;
                             updateLocalItemField(i._id, "product", value);
@@ -633,10 +634,7 @@ const Table = ({
                                 if (i.isNew || hasItemChanged(i._id)) {
                                   saveItemById(i._id).then((result) => {
                                     if (result.success) {
-                                      showToast(
-                                        "Product value updated",
-                                        "success"
-                                      );
+                                      showToast("Value updated", "success");
                                     }
                                   });
                                 }
@@ -649,21 +647,27 @@ const Table = ({
                                 }
                               }
                             }
-                            // Ctrl + Shift: Quick delete current row and move to Add Item
-                            if (e.ctrlKey && e.shiftKey) {
+                            // Delete key: Quick delete current row and move to Add Item
+                            if (e.key === "Delete") {
                               e.preventDefault();
                               console.log(
-                                "Ctrl+Shift pressed - quick deleting row:",
+                                "Delete pressed - quick deleting row:",
                                 i._id
                               );
                               // Delete the current row
                               setItems((prevItems) =>
                                 prevItems.filter((item) => item._id !== i._id)
                               );
+                              // Show success message
+                              showToast(
+                                "Item deleted successfully!",
+                                "success"
+                              );
                               // Move focus to Add Item button
                               if (onLastCellTab) {
                                 onLastCellTab();
                               }
+                              return;
                             }
                           }}
                           placeholder="Product"
@@ -869,10 +873,7 @@ const Table = ({
                               if (i.isNew || hasItemChanged(i._id)) {
                                 saveItemById(i._id).then((result) => {
                                   if (result.success) {
-                                    showToast(
-                                      "Quantity value updated",
-                                      "success"
-                                    );
+                                    showToast("Value updated", "success");
                                   }
                                 });
                               }
@@ -916,17 +917,19 @@ const Table = ({
                             return;
                           }
 
-                          // Ctrl + Shift: Quick delete current row and move to Add Item
-                          if (e.ctrlKey && e.shiftKey) {
+                          // Delete key: Quick delete current row and move to Add Item
+                          if (e.key === "Delete") {
                             e.preventDefault();
                             console.log(
-                              "Ctrl+Shift pressed - quick deleting row:",
+                              "Delete pressed - quick deleting row:",
                               i._id
                             );
                             // Delete the current row
                             setItems((prevItems) =>
                               prevItems.filter((item) => item._id !== i._id)
                             );
+                            // Show success message
+                            showToast("Item deleted successfully!", "success");
                             // Move focus to Add Item button
                             if (onLastCellTab) {
                               onLastCellTab();
@@ -1144,7 +1147,7 @@ const Table = ({
                                         "success"
                                       );
                                     } else {
-                                      showToast("MRP value updated", "success");
+                                      showToast("Value updated", "success");
                                     }
 
                                     if (index === items.length - 1) {
@@ -1306,17 +1309,19 @@ const Table = ({
                             return;
                           }
 
-                          // Ctrl + Shift: Quick delete current row and move to Add Item
-                          if (e.ctrlKey && e.shiftKey) {
+                          // Delete key: Quick delete current row and move to Add Item
+                          if (e.key === "Delete") {
                             e.preventDefault();
                             console.log(
-                              "Ctrl+Shift pressed - quick deleting row:",
+                              "Delete pressed - quick deleting row:",
                               i._id
                             );
                             // Delete the current row
                             setItems((prevItems) =>
                               prevItems.filter((item) => item._id !== i._id)
                             );
+                            // Show success message
+                            showToast("Item deleted successfully!", "success");
                             // Move focus to search bar
                             if (onLastCellTab) {
                               onLastCellTab();

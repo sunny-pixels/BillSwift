@@ -108,12 +108,12 @@ const SearchItemInventory = forwardRef(
       }, 200);
     };
 
-    const onItemSelect = (item) => {
+    const onItemSelect = (item, shouldFocus = false) => {
       setInput(item.product);
       setShowResults(false);
       console.log("item selected:", item);
 
-      onItemHighlight(item);
+      onItemHighlight(item, shouldFocus); // Pass shouldFocus parameter
       setInput("");
     };
 
@@ -121,7 +121,7 @@ const SearchItemInventory = forwardRef(
       if (e.key === "Enter") {
         if (results.length > 0) {
           const indexToUse = selectedItem >= 0 ? selectedItem : 0;
-          onItemSelect(results[indexToUse]);
+          onItemSelect(results[indexToUse], false); // Enter: highlight only, no focus
         }
       } else if (e.key === "Tab" && results.length > 0) {
         e.preventDefault();
@@ -130,9 +130,9 @@ const SearchItemInventory = forwardRef(
             prev <= 0 ? results.length - 1 : prev - 1
           );
         } else {
-          setSelectedItem((prev) =>
-            prev === -1 || prev >= results.length - 1 ? 0 : prev + 1
-          );
+          // Tab without Shift: select item and focus on it
+          const indexToUse = selectedItem >= 0 ? selectedItem : 0;
+          onItemSelect(results[indexToUse], true); // Tab: highlight AND focus
         }
       } else if (e.key === "ArrowUp" && results.length > 0) {
         e.preventDefault();
@@ -191,7 +191,7 @@ const SearchItemInventory = forwardRef(
             {results.map((result, index) => (
               <div
                 key={result._id || result.itemCode}
-                onClick={() => onItemSelect(result)}
+                onClick={() => onItemSelect(result, false)} // Click: highlight only, no focus
                 role="button"
                 tabIndex={0}
                 className={

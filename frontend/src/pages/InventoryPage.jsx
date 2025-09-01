@@ -33,7 +33,7 @@ const InventoryPage = () => {
     useEffect(() => {
       const timer = setTimeout(() => {
         onClose();
-      }, 500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }, [onClose]);
@@ -134,11 +134,29 @@ const InventoryPage = () => {
     navigate("/bill");
   };
 
-  const handleHighlightRecord = (item) => {
+  const handleHighlightRecord = (item, shouldFocus = false) => {
     setHighlightedItemId(item.itemCode || item._id);
     setTimeout(() => {
       setHighlightedItemId(null);
     }, 1500);
+
+    // If shouldFocus is true, focus on the product field of the found item
+    if (shouldFocus) {
+      setTimeout(() => {
+        const itemId = item.itemCode || item._id;
+        const productInput = document.querySelector(
+          `input[data-item-id="${itemId}"]`
+        );
+        if (productInput) {
+          productInput.focus();
+          // Scroll the item into view
+          productInput.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 100); // Small delay to ensure the highlight is set first
+    }
   };
 
   // Function to refresh items and calculate total value
