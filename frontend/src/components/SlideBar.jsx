@@ -36,7 +36,7 @@ const SlideBar = ({ isDarkMode }) => {
               : 'text-[#767c8f] hover:text-[#141416] hover:bg-[#f4f4f6]'
         }`}>
           <HiClipboardList className="text-2xl" />
-          <span className="text-xs mt-1 font-medium">Add Item</span>
+          <span className="text-xs mt-1 font-medium">Inventory</span>
         </div>
       </Link>
       <Link to="/bill">

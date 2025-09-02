@@ -35,7 +35,8 @@ const SearchItemBill = ({
 
   useEffect(() => {
     // Highlight first item when results are present
-    if (results.length > 0) setSelectedItem(0); else setSelectedItem(-1);
+    if (results.length > 0) setSelectedItem(0);
+    else setSelectedItem(-1);
   }, [results]);
 
   // Scroll selected item into view
@@ -64,7 +65,9 @@ const SearchItemBill = ({
       setIsLoading(true);
       try {
         if (abortRef.current) {
-          try { abortRef.current.abort(); } catch {}
+          try {
+            abortRef.current.abort();
+          } catch {}
         }
         const controller = new AbortController();
         abortRef.current = controller;
@@ -83,7 +86,7 @@ const SearchItemBill = ({
         setResults(filteredResults);
         setShowResults(true);
       } catch (error) {
-        if (error?.name === 'AbortError') {
+        if (error?.name === "AbortError") {
           // ignore aborted requests
         } else {
           console.error("Error fetching items:", error);
@@ -117,11 +120,13 @@ const SearchItemBill = ({
       // Create item object
       const item = {
         product: result.product,
-        quantity: result.quantity || 1,
+        // Always start with quantity 1 on Bill page when selected from search
+        quantity: 1,
+        // MRP should match inventory's MRP
         mrp: result.mrp || 0,
         itemCode:
           result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
-        netamt: (result.quantity || 1) * (result.mrp || 0),
+        netamt: 1 * (result.mrp || 0),
       };
 
       // Add item to table
@@ -185,7 +190,9 @@ const SearchItemBill = ({
         // Shift+Tab: Navigate backward through search results if available
         if (results.length > 0) {
           e.preventDefault();
-          setSelectedItem((prev) => (prev <= 0 ? results.length - 1 : prev - 1));
+          setSelectedItem((prev) =>
+            prev <= 0 ? results.length - 1 : prev - 1
+          );
         }
         // If no results, let default Shift+Tab behavior work
       } else {
@@ -244,11 +251,19 @@ const SearchItemBill = ({
         <div
           ref={resultsRef}
           className={`absolute top-[60px] w-full rounded-[24px] flex flex-col shadow-lg max-h-[240px] overflow-y-auto z-50 scrollbar-hide border ${
-            isDarkMode ? 'bg-[#2a2a2d] border-white/10' : 'bg-white border-[#f4f4f6]'
+            isDarkMode
+              ? "bg-[#2a2a2d] border-white/10"
+              : "bg-white border-[#f4f4f6]"
           }`}
         >
           {isLoading ? (
-            <div className={`p-3 text-center ${isDarkMode ? 'text-[#9aa0ae]' : 'text-[#767c8f]'}`}>Loading...</div>
+            <div
+              className={`p-3 text-center ${
+                isDarkMode ? "text-[#9aa0ae]" : "text-[#767c8f]"
+              }`}
+            >
+              Loading...
+            </div>
           ) : results.length > 0 ? (
             results.map((result, index) => (
               <div
@@ -262,15 +277,21 @@ const SearchItemBill = ({
                       ? "p-3 bg-[#343438] text-white font-medium text-[13px] cursor-pointer focus:outline-none"
                       : "p-3 bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none"
                     : isDarkMode
-                      ? "p-3 hover:bg-[#343438] text-white font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
-                      : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
+                    ? "p-3 hover:bg-[#343438] text-white font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
+                    : "p-3 hover:bg-[#f4f4f6] text-[#141416] font-medium text-[13px] cursor-pointer focus:outline-none transition-colors duration-150"
                 }
               >
                 {result?.product || "No Item Code"}
               </div>
             ))
           ) : (
-            <div className={`p-3 text-center ${isDarkMode ? 'text-[#9aa0ae]' : 'text-[#767c8f]'}`}>No items found</div>
+            <div
+              className={`p-3 text-center ${
+                isDarkMode ? "text-[#9aa0ae]" : "text-[#767c8f]"
+              }`}
+            >
+              No items found
+            </div>
           )}
         </div>
       )}

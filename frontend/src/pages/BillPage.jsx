@@ -8,30 +8,46 @@ import Button from "../components/Button";
 import PhoneNumberModal from "../components/PhoneNumberModal";
 import QRCodeModal from "../components/QRCodeModal";
 import BillTabs from "../components/BillTabs";
-import { checkWhatsAppStatus, sendWhatsAppMessage } from "../services/whatsappService";
+import {
+  checkWhatsAppStatus,
+  sendWhatsAppMessage,
+} from "../services/whatsappService";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { HiSun, HiMoon } from "react-icons/hi2";
 
 const BillPage = () => {
-  // Tabs state management
-  const [tabs, setTabs] = useState([
-    { id: '1', name: 'Bill 1', items: [] }
-  ]);
-  const [activeTab, setActiveTab] = useState('1');
-  
+  // Tabs state management (hydrate from localStorage on first render)
+  const [tabs, setTabs] = useState(() => {
+    try {
+      const savedTabs = localStorage.getItem("billTabs");
+      if (savedTabs) {
+        const parsed = JSON.parse(savedTabs);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [{ id: "1", name: "Bill 1", items: [] }];
+  });
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const savedActive = localStorage.getItem("activeBillTab");
+      if (savedActive) return savedActive;
+    } catch (_) {}
+    return "1";
+  });
+
   // Get current tab's items
-  const currentTab = tabs.find(tab => tab.id === activeTab);
+  const currentTab = tabs.find((tab) => tab.id === activeTab);
   const items = currentTab ? currentTab.items : [];
-  
+
   const itemsRef = useRef([]);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [pdfBuffer, setPdfBuffer] = useState(null);
-  const [whatsappStatus, setWhatsappStatus] = useState('disconnected');
+  const [whatsappStatus, setWhatsappStatus] = useState("disconnected");
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : true; // Default to dark if no preference
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme ? savedTheme === "dark" : true; // Default to dark if no preference
   });
   // Track the most recently added item for focus navigation
   const [lastAddedItemId, setLastAddedItemId] = useState(null);
@@ -42,10 +58,10 @@ const BillPage = () => {
   const triggerPrintWithAnimation = () => {
     const button = printButtonRef.current;
     if (button) {
-      button.style.transform = 'translateX(calc(118px - 100%))';
+      button.style.transform = "translateX(calc(118px - 100%))";
       setTimeout(() => {
         generatePDF();
-        button.style.transform = 'translateX(0)';
+        button.style.transform = "translateX(0)";
       }, 500);
     } else {
       generatePDF();
@@ -55,29 +71,47 @@ const BillPage = () => {
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-    document.body.style.backgroundColor = newTheme ? '#141416' : '#ffffff';
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
+    document.body.style.backgroundColor = newTheme ? "#141416" : "#ffffff";
   };
 
   useEffect(() => {
     itemsRef.current = items;
   }, [items, activeTab]);
 
+  // Persist tabs to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("billTabs", JSON.stringify(tabs));
+    } catch (err) {
+      console.error("Failed to persist bill tabs to localStorage", err);
+    }
+  }, [tabs]);
+
+  // Persist active tab to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("activeBillTab", activeTab);
+    } catch (err) {
+      console.error("Failed to persist active tab to localStorage", err);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     // Set initial background color
-    document.body.style.backgroundColor = isDarkMode ? '#141416' : '#ffffff';
+    document.body.style.backgroundColor = isDarkMode ? "#141416" : "#ffffff";
   }, [items]);
 
   // Check WhatsApp connection status on component mount
   useEffect(() => {
     const checkStatus = async () => {
       const status = await checkWhatsAppStatus();
-      if (status.status === 'connected') {
-        setWhatsappStatus('connected');
+      if (status.status === "connected") {
+        setWhatsappStatus("connected");
       } else if (status.qr) {
-        setWhatsappStatus('qr');
+        setWhatsappStatus("qr");
       } else {
-        setWhatsappStatus('disconnected');
+        setWhatsappStatus("disconnected");
       }
     };
 
@@ -97,11 +131,9 @@ const BillPage = () => {
       isNew: true, // Mark as new item
     };
 
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === activeTab 
-          ? { ...tab, items: [...tab.items, newItem] }
-          : tab
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
       )
     );
     // Remember the last added item's id so Tab can jump to it
@@ -110,16 +142,14 @@ const BillPage = () => {
 
   // Function to update items (for editing)
   const updateItem = (itemId, updatedFields) => {
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === activeTab 
-          ? { 
-              ...tab, 
-              items: tab.items.map(item => 
-                item._id === itemId 
-                  ? { ...item, ...updatedFields }
-                  : item
-              )
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === activeTab
+          ? {
+              ...tab,
+              items: tab.items.map((item) =>
+                item._id === itemId ? { ...item, ...updatedFields } : item
+              ),
             }
           : tab
       )
@@ -138,22 +168,18 @@ const BillPage = () => {
       isNew: true,
     };
 
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === activeTab 
-          ? { ...tab, items: [...tab.items, newItem] }
-          : tab
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
       )
     );
   };
 
   // Function to rename tabs
   const handleTabRename = (tabId, newName) => {
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === tabId 
-          ? { ...tab, name: newName }
-          : tab
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === tabId ? { ...tab, name: newName } : tab
       )
     );
   };
@@ -164,57 +190,67 @@ const BillPage = () => {
   };
 
   const handleTabAdd = () => {
-    const newTabId = (Math.max(...tabs.map(tab => parseInt(tab.id))) + 1).toString();
+    const newTabId = (tabs.length + 1).toString();
     const newTab = {
       id: newTabId,
       name: `Bill ${newTabId}`,
-      items: []
+      items: [],
     };
-    setTabs(prevTabs => [...prevTabs, newTab]);
+    setTabs((prevTabs) => [...prevTabs, newTab]);
     setActiveTab(newTabId);
   };
 
   // Update tab names with item counts
   const updateTabNames = () => {
-    setTabs(prevTabs => 
-      prevTabs.map(tab => {
-        // Check if the tab name is already custom (doesn't follow the "Bill X" pattern)
+    setTabs((prevTabs) =>
+      prevTabs.map((tab, index) => {
         const isCustomName = !tab.name.match(/^Bill \d+/);
-        
+
         if (isCustomName) {
-          // Keep custom name but add item count if not present
           const hasItemCount = tab.name.includes(`(${tab.items.length})`);
           if (!hasItemCount && tab.items.length > 0) {
             return { ...tab, name: `${tab.name} (${tab.items.length})` };
           }
           return tab;
         } else {
-          // Standard bill name, update with item count
+          // For default tabs, number by index (1..N) so gaps are removed after deletions/reloads
+          const sequentialNumber = index + 1;
           return {
-        ...tab,
-        name: `Bill ${tab.id}${tab.items.length > 0 ? ` (${tab.items.length})` : ''}`
+            ...tab,
+            name: `Bill ${sequentialNumber}${
+              tab.items.length > 0 ? ` (${tab.items.length})` : ""
+            }`,
           };
         }
       })
     );
   };
 
-  // Update tab names whenever items change
+  // Update tab names whenever tabs or item counts change
   useEffect(() => {
     updateTabNames();
-  }, [tabs.map(tab => tab.items.length).join(',')]);
+  }, [
+    tabs.map((tab) => `${tab.id}|${tab.name}|${tab.items.length}`).join(","),
+  ]);
 
   const handleTabClose = (tabId) => {
     if (tabs.length === 1) {
       toast.error("Cannot close the last tab");
       return;
     }
-    
-    setTabs(prevTabs => prevTabs.filter(tab => tab.id !== tabId));
-    
+
+    setTabs((prevTabs) => {
+      const filtered = prevTabs.filter((tab) => tab.id !== tabId);
+      // Re-sequence ids to be 1..N so numbering stays compact
+      return filtered.map((tab, index) => ({
+        ...tab,
+        id: (index + 1).toString(),
+      }));
+    });
+
     // If closing the active tab, switch to the previous tab
     if (activeTab === tabId) {
-      const currentIndex = tabs.findIndex(tab => tab.id === tabId);
+      const currentIndex = tabs.findIndex((tab) => tab.id === tabId);
       const newActiveTab = tabs[currentIndex - 1] || tabs[currentIndex + 1];
       setActiveTab(newActiveTab.id);
     }
@@ -222,11 +258,9 @@ const BillPage = () => {
 
   // Function to update items in current tab
   const setItems = (newItems) => {
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === activeTab 
-          ? { ...tab, items: newItems }
-          : tab
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === activeTab ? { ...tab, items: newItems } : tab
       )
     );
   };
@@ -269,16 +303,13 @@ const BillPage = () => {
     });
 
     // Calculate total
-    const total = currentItems.reduce((sum, item) => sum + (item?.netamt || 0), 0);
+    const total = currentItems.reduce(
+      (sum, item) => sum + (item?.netamt || 0),
+      0
+    );
 
     // Prepare table data (hide Item Code)
-    const tableColumn = [
-      "No",
-      "Product",
-      "Quantity",
-      "MRP",
-      "Net Amount",
-    ];
+    const tableColumn = ["No", "Product", "Quantity", "MRP", "Net Amount"];
     const tableRows = currentItems.map((item, index) => [
       index + 1,
       item.product || "N/A",
@@ -333,15 +364,17 @@ const BillPage = () => {
     // Add footer
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("Thank you for your business!", 105, finalY + 25, { align: "center" });
+    doc.text("Thank you for your business!", 105, finalY + 25, {
+      align: "center",
+    });
     doc.text("Generated by BillSwift", 105, finalY + 30, { align: "center" });
 
     // Get PDF as buffer
-    const pdfBuffer = doc.output('arraybuffer');
+    const pdfBuffer = doc.output("arraybuffer");
     setPdfBuffer(pdfBuffer);
 
     // Check WhatsApp status before showing phone modal
-    if (whatsappStatus === 'connected') {
+    if (whatsappStatus === "connected") {
       // Directly show phone modal without showing connection status
       setShowPhoneModal(true);
     } else {
@@ -373,72 +406,86 @@ const BillPage = () => {
   const handlePhoneSubmit = async (phoneNumber) => {
     try {
       // Create message with product details
-      const message = `*Invoice Details*\n\n` +
-        items.map(item => 
-          `• ${item.product} x ${item.quantity} = ₹${item.netamt.toLocaleString()}`
-        ).join('\n') +
-        `\n\n*Total Amount: ₹${items.reduce((sum, item) => sum + (item?.netamt || 0), 0).toLocaleString()}*`;
+      const message =
+        `*Invoice Details*\n\n` +
+        items
+          .map(
+            (item) =>
+              `• ${item.product} x ${
+                item.quantity
+              } = ₹${item.netamt.toLocaleString()}`
+          )
+          .join("\n") +
+        `\n\n*Total Amount: ₹${items
+          .reduce((sum, item) => sum + (item?.netamt || 0), 0)
+          .toLocaleString()}*`;
 
       // Send WhatsApp message and PDF
-      const success = await sendWhatsAppMessage(phoneNumber, message, pdfBuffer);
-      
+      const success = await sendWhatsAppMessage(
+        phoneNumber,
+        message,
+        pdfBuffer
+      );
+
       if (success) {
-        toast.success('Invoice sent successfully via WhatsApp!');
+        toast.success("Invoice sent successfully via WhatsApp!");
       } else {
-        toast.error('Failed to send invoice via WhatsApp');
+        toast.error("Failed to send invoice via WhatsApp");
       }
     } catch (error) {
-      console.error('Error sending WhatsApp message:', error);
-      toast.error('Failed to send invoice via WhatsApp');
+      console.error("Error sending WhatsApp message:", error);
+      toast.error("Failed to send invoice via WhatsApp");
     }
   };
 
   const handleQRModalClose = () => {
     setShowQRModal(false);
-    
+
     // Check WhatsApp status after closing QR modal
     const checkStatus = async () => {
       const status = await checkWhatsAppStatus();
-      if (status.status === 'connected') {
-        setWhatsappStatus('connected');
+      if (status.status === "connected") {
+        setWhatsappStatus("connected");
         // If now connected, show the phone modal
         setShowPhoneModal(true);
       }
     };
-    
+
     checkStatus();
   };
 
-  const handleDeleteClick = useCallback((itemId) => {
-    // Find the item to delete before removing it
-    const currentItems = tabs.find(tab => tab.id === activeTab)?.items || [];
-    const itemToDelete = currentItems.find(item => item._id === itemId);
-    
-    if (!itemToDelete) {
-      console.error("Item not found for deletion:", itemId);
-      return;
-    }
-    
-    // Remove from local state immediately for better UX
-    setTabs(prevTabs => 
-      prevTabs.map(tab => 
-        tab.id === activeTab 
-          ? { ...tab, items: tab.items.filter((item) => item._id !== itemId) }
-          : tab
-      )
-    );
-    
-    // Check if it's a temporary ID (not a MongoDB ObjectId) or if it's a new item
-    const isTemporaryId = !itemId.match(/^[0-9a-fA-F]{24}$/);
-    const isNewItem = itemToDelete.isNew;
-    
-    // If it's a temporary ID or new item, just remove from local state
-    if (isTemporaryId || isNewItem) {
-      toast.success("Item removed successfully");
-      return;
-    }
-    
-    // If it's an existing item from database, delete from backend
+  const handleDeleteClick = useCallback(
+    (itemId) => {
+      // Find the item to delete before removing it
+      const currentItems =
+        tabs.find((tab) => tab.id === activeTab)?.items || [];
+      const itemToDelete = currentItems.find((item) => item._id === itemId);
+
+      if (!itemToDelete) {
+        console.error("Item not found for deletion:", itemId);
+        return;
+      }
+
+      // Remove from local state immediately for better UX
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) =>
+          tab.id === activeTab
+            ? { ...tab, items: tab.items.filter((item) => item._id !== itemId) }
+            : tab
+        )
+      );
+
+      // Check if it's a temporary ID (not a MongoDB ObjectId) or if it's a new item
+      const isTemporaryId = !itemId.match(/^[0-9a-fA-F]{24}$/);
+      const isNewItem = itemToDelete.isNew;
+
+      // If it's a temporary ID or new item, just remove from local state
+      if (isTemporaryId || isNewItem) {
+        toast.success("Item removed successfully");
+        return;
+      }
+
+      // If it's an existing item from database, delete from backend
       axios
         .delete(`http://localhost:5001/deleteItem/${itemId}`)
         .then(() => {
@@ -446,20 +493,22 @@ const BillPage = () => {
         })
         .catch((err) => {
           // Revert the local state change if the API call fails
-        setTabs(prevTabs => 
-          prevTabs.map(tab => 
-            tab.id === activeTab 
-              ? { ...tab, items: [...tab.items, itemToDelete] }
-              : tab
-          )
-        );
+          setTabs((prevTabs) =>
+            prevTabs.map((tab) =>
+              tab.id === activeTab
+                ? { ...tab, items: [...tab.items, itemToDelete] }
+                : tab
+            )
+          );
           console.error("Delete error:", err);
           toast.error("Failed to delete item from database");
         });
-  }, [activeTab, tabs]);
+    },
+    [activeTab, tabs]
+  );
 
   return (
-    <div className={`flex p-6 ${isDarkMode ? 'bg-[#141416]' : 'bg-white'}`}>
+    <div className={`flex p-6 ${isDarkMode ? "bg-[#141416]" : "bg-white"}`}>
       <SlideBar isDarkMode={isDarkMode} />
       <div className="flex-1 flex flex-col gap-6">
         {/* Tabs Section */}
@@ -472,25 +521,41 @@ const BillPage = () => {
           onTabRename={handleTabRename}
           isDarkMode={isDarkMode}
         />
-        
+
         {/* Search and Title Section */}
-        <div className={`p-6 rounded-t-[24px] rounded-b-[24px] border-3 ${isDarkMode ? 'bg-[#1A1A1C] border-[#1A1A1C]' : 'bg-white border-[#f4f4f6]'}`}>
+        <div
+          className={`p-6 rounded-t-[24px] rounded-b-[24px] border-3 ${
+            isDarkMode
+              ? "bg-[#1A1A1C] border-[#1A1A1C]"
+              : "bg-white border-[#f4f4f6]"
+          }`}
+        >
           <div className="flex items-center justify-between mb-6 pl-6">
             <div className="flex items-center gap-3">
-              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}>Bill Management</h1>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                isDarkMode 
-                  ? 'bg-[#3379E9] text-white' 
-                  : 'bg-[#3379E9] text-white'
-              }`}>
-                {currentTab?.name || 'Bill 1'}
+              <h1
+                className={`text-2xl font-bold ${
+                  isDarkMode ? "text-white" : "text-[#141416]"
+                }`}
+              >
+                Bill Management
+              </h1>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  isDarkMode
+                    ? "bg-[#3379E9] text-white"
+                    : "bg-[#3379E9] text-white"
+                }`}
+              >
+                {currentTab?.name || "Bill 1"}
               </span>
             </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={toggleTheme}
                 className={`p-2 rounded-[24px] inline-flex items-center justify-center ${
-                  isDarkMode ? 'bg-[#2a2a2d] text-white hover:bg-[#1A1A1C]' : 'bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]'
+                  isDarkMode
+                    ? "bg-[#2a2a2d] text-white hover:bg-[#1A1A1C]"
+                    : "bg-[#f4f4f6] text-[#141416] hover:bg-[#e8e8ea]"
                 }`}
               >
                 {isDarkMode ? (
@@ -500,19 +565,23 @@ const BillPage = () => {
                 )}
               </button>
               <div className="relative w-[400px]">
-                <SearchItemBill 
+                <SearchItemBill
                   onItemSelect={addItem}
                   onCtrlEnterPrint={triggerPrintWithAnimation}
                   onTabToTable={() => {
                     if (items.length === 0) {
                       return;
                     }
-                    
+
                     // Try to focus the most recently added item's first editable input (quantity)
                     if (lastAddedItemId) {
-                      const row = document.querySelector(`tr[data-item-id="${lastAddedItemId}"]`);
+                      const row = document.querySelector(
+                        `tr[data-item-id="${lastAddedItemId}"]`
+                      );
                       if (row) {
-                        const qtyInput = row.querySelector('input[type="number"]');
+                        const qtyInput = row.querySelector(
+                          'input[type="number"]'
+                        );
                         if (qtyInput) {
                           qtyInput.focus();
                           return;
@@ -527,7 +596,9 @@ const BillPage = () => {
                     if (firstInput) {
                       firstInput.focus();
                     } else {
-                      const allInputs = document.querySelectorAll('input[type="number"]');
+                      const allInputs = document.querySelectorAll(
+                        'input[type="number"]'
+                      );
                       if (allInputs.length > 0) {
                         allInputs[0].focus();
                       }
@@ -535,45 +606,64 @@ const BillPage = () => {
                   }}
                   name="Add Products"
                   className={`w-full px-0 py-0 rounded-[240px] focus:outline-none flex items-center gap-4 ${
-                    isDarkMode ? 'bg-[#2a2a2d]' : 'bg-[#f4f4f6]'
+                    isDarkMode ? "bg-[#2a2a2d]" : "bg-[#f4f4f6]"
                   }`}
                   iconWrapperClassName={`px-3 py-3 rounded-full flex items-center justify-center ${
-                    isDarkMode ? 'bg-[#facd40]' : 'bg-[#facd40]'
+                    isDarkMode ? "bg-[#facd40]" : "bg-[#facd40]"
                   }`}
-                  iconClassName={isDarkMode ? 'text-black text-base' : 'text-[#141416] text-base'}
-                  placeholderClassName={`text-base font-medium ${isDarkMode ? 'text-[#767c8f]' : 'text-[#141416]'}`}
+                  iconClassName={
+                    isDarkMode
+                      ? "text-black text-base"
+                      : "text-[#141416] text-base"
+                  }
+                  placeholderClassName={`text-base font-medium ${
+                    isDarkMode ? "text-[#767c8f]" : "text-[#141416]"
+                  }`}
                 />
               </div>
             </div>
           </div>
 
           {/* Table Section */}
-          <div className={`px-6 ${isDarkMode ? 'bg-[#1A1A1C]' : 'bg-white'}`}>
+          <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
             <div>
-              <Table 
-                items={items} 
+              <Table
+                items={items}
                 setItems={setItems}
                 onUpdateItem={updateItem}
                 isProductEditable={false}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
-                  isDarkMode 
-                    ? '[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]' 
-                    : '[&_td]:border-[#f4f4f6] [&_th]:border-[#f4f4f6]'
+                  isDarkMode
+                    ? "[&_td]:border-[#2a2a2d] [&_th]:border-[#2a2a2d]"
+                    : "[&_td]:border-[#f4f4f6] [&_th]:border-[#f4f4f6]"
                 }`}
-                headerClassName={`font-medium ${isDarkMode ? 'bg-[#1A1A1C] text-[#767c8f]' : 'bg-white text-[#767c8f]'}`}
-                rowClassName={`${isDarkMode ? 'text-white hover:bg-[#2a2a2d]' : 'text-[#141416] hover:bg-[#f4f4f6]'}`}
-                highlightClassName={isDarkMode ? 'bg-[#2a2a2d]' : 'bg-[#f4f4f6]'}
+                headerClassName={`font-medium ${
+                  isDarkMode
+                    ? "bg-[#1A1A1C] text-[#767c8f]"
+                    : "bg-white text-[#767c8f]"
+                }`}
+                rowClassName={`${
+                  isDarkMode
+                    ? "text-white hover:bg-[#2a2a2d]"
+                    : "text-[#141416] hover:bg-[#f4f4f6]"
+                }`}
+                highlightClassName={
+                  isDarkMode ? "bg-[#2a2a2d]" : "bg-[#f4f4f6]"
+                }
                 iconClassName={`transition-colors duration-150 ${
-                  isDarkMode 
-                    ? 'text-[#767c8f] hover:text-white' 
-                    : 'text-[#767c8f] hover:text-[#141416]'
+                  isDarkMode
+                    ? "text-[#767c8f] hover:text-white"
+                    : "text-[#767c8f] hover:text-[#141416]"
                 }`}
                 cellClassName="px-6 py-4 rounded-none"
                 onDeleteClick={handleDeleteClick}
                 onLastCellTab={() => {
-                  console.log("onLastCellTab called, whatsappStatus:", whatsappStatus);
+                  console.log(
+                    "onLastCellTab called, whatsappStatus:",
+                    whatsappStatus
+                  );
                   // Focus the Connect WhatsApp button when tabbing from the last cell
-                  if (whatsappStatus === 'connected') {
+                  if (whatsappStatus === "connected") {
                     // If WhatsApp is connected, focus the Print Bill button directly
                     console.log("WhatsApp connected, focusing Print button");
                     if (printButtonRef.current) {
@@ -581,7 +671,9 @@ const BillPage = () => {
                     }
                   } else {
                     // If WhatsApp is not connected, focus the Connect WhatsApp button
-                    console.log("WhatsApp not connected, focusing Connect WhatsApp button");
+                    console.log(
+                      "WhatsApp not connected, focusing Connect WhatsApp button"
+                    );
                     if (connectWhatsAppButtonRef.current) {
                       connectWhatsAppButtonRef.current.focus();
                     }
@@ -591,15 +683,15 @@ const BillPage = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="flex justify-between items-start">
-          {whatsappStatus === 'connected' ? (
+          {whatsappStatus === "connected" ? (
             <div className={`text-[#767c8f] text-sm flex items-center`}>
               <span className="w-2 h-2 bg-[#25D366] rounded-full mr-2"></span>
               WhatsApp Connected
             </div>
           ) : (
-            <button 
+            <button
               ref={connectWhatsAppButtonRef}
               tabIndex={0}
               onClick={() => setShowQRModal(true)}
@@ -613,15 +705,15 @@ const BillPage = () => {
                 }
               }}
               className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
-                isDarkMode 
-                  ? 'bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white' 
-                  : 'bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]'
+                isDarkMode
+                  ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
+                  : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
               }`}
             >
               Connect WhatsApp
             </button>
           )}
-          
+
           <div className="flex flex-col items-end gap-4">
             <div className="relative w-[150px] h-[150px] rounded-[24px] overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_#3379E9,_#1466e4)]"></div>
@@ -629,7 +721,10 @@ const BillPage = () => {
                 <div>
                   <div className="text-white text-lg font-medium">Total</div>
                   <div className="text-white text-[32px] font-medium leading-none ">
-                    ₹{items.reduce((sum, item) => sum + (item?.netamt || 0), 0).toLocaleString()}
+                    ₹
+                    {items
+                      .reduce((sum, item) => sum + (item?.netamt || 0), 0)
+                      .toLocaleString()}
                   </div>
                 </div>
                 <div className="relative w-full h-10 bg-white/10 rounded-full overflow-hidden">
@@ -644,7 +739,9 @@ const BillPage = () => {
                       if (e.key === "Tab" && !e.shiftKey) {
                         e.preventDefault();
                         // Move focus back to search bar
-                        const searchInput = document.querySelector('input[placeholder="Search for products..."]');
+                        const searchInput = document.querySelector(
+                          'input[placeholder="Search for products..."]'
+                        );
                         if (searchInput) {
                           searchInput.focus();
                         }
@@ -652,8 +749,19 @@ const BillPage = () => {
                     }}
                     className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 focus:bg-white/40 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform hover:scale-105 focus:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] focus:shadow-[0_0_30px_rgba(255,255,255,0.8)]"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -669,20 +777,22 @@ const BillPage = () => {
         onPhoneSubmit={handlePhoneSubmit}
         overlayClassName="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 flex items-center justify-center"
         modalClassName={`p-6 w-full max-w-md border rounded-[24px] shadow-xl ${
-          isDarkMode 
-            ? 'bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl' 
-            : 'bg-white/90 border-black/5 backdrop-blur-xl'
+          isDarkMode
+            ? "bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl"
+            : "bg-white/90 border-black/5 backdrop-blur-xl"
         }`}
-        headerClassName={`font-bold text-xl mb-6 ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}
+        headerClassName={`font-bold text-xl mb-6 ${
+          isDarkMode ? "text-white" : "text-[#141416]"
+        }`}
         inputClassName={`w-full p-4 rounded-[16px] mb-6 focus:outline-none border transition-colors duration-200 ${
-          isDarkMode 
-            ? 'bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f]' 
-            : 'bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f]'
+          isDarkMode
+            ? "bg-[#2a2a2d]/80 border-white/10 text-white placeholder-[#767c8f]"
+            : "bg-[#f4f4f6]/80 border-black/5 text-[#141416] placeholder-[#767c8f]"
         }`}
         buttonClassName={`w-full p-4 font-medium rounded-[16px] transition-all duration-200 ${
-          isDarkMode 
-            ? 'bg-[#3379E9] hover:bg-[#1466e4] text-white' 
-            : 'bg-[#3379E9] hover:bg-[#1466e4] text-white'
+          isDarkMode
+            ? "bg-[#3379E9] hover:bg-[#1466e4] text-white"
+            : "bg-[#3379E9] hover:bg-[#1466e4] text-white"
         }`}
       />
 
@@ -691,11 +801,13 @@ const BillPage = () => {
         onClose={handleQRModalClose}
         overlayClassName="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 flex items-center justify-center"
         modalClassName={`p-6 w-full max-w-md border rounded-[24px] shadow-xl ${
-          isDarkMode 
-            ? 'bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl' 
-            : 'bg-white/90 border-black/5 backdrop-blur-xl'
+          isDarkMode
+            ? "bg-[#1A1A1C]/90 border-white/10 backdrop-blur-xl"
+            : "bg-white/90 border-black/5 backdrop-blur-xl"
         }`}
-        headerClassName={`font-bold text-xl mb-6 ${isDarkMode ? 'text-white' : 'text-[#141416]'}`}
+        headerClassName={`font-bold text-xl mb-6 ${
+          isDarkMode ? "text-white" : "text-[#141416]"
+        }`}
         isDarkMode={isDarkMode}
       />
     </div>

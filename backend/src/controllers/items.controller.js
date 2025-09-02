@@ -1,4 +1,4 @@
-import Item from "../models/item.model.js";  // add .js extension
+import Item from "../models/item.model.js"; // add .js extension
 
 export const handleGetAllItems = async (req, res) => {
   try {
@@ -9,4 +9,3 @@ export const handleGetAllItems = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
