@@ -5,7 +5,7 @@ import { AiOutlineCheck } from "react-icons/ai";
 import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL;
 
-const Table = ({
+const BillTable = ({
   items,
   setItems,
   highlightedItemId,
@@ -18,7 +18,7 @@ const Table = ({
   onLastCellTab, // Callback when Tab is pressed on the last cell
   onUpdateItem, // Callback for updating items
   onDeleteClick, // Callback for deleting items
-  isProductEditable = false, // New prop to control if product field is editable
+  isProductEditable = false, // Bill table has non-editable product field by default
 }) => {
   const highlightedRowRef = useRef(null);
   const lastInputRef = useRef(null);
@@ -90,6 +90,12 @@ const Table = ({
       });
     }
   }, [highlightedItemId]);
+
+  // Debug logging for items
+  useEffect(() => {
+    console.log("BillTable - Received items:", items);
+    console.log("BillTable - Items length:", items?.length || 0);
+  }, [items]);
 
   // Auto-scroll to new items when they're added
   useEffect(() => {
@@ -447,17 +453,31 @@ const Table = ({
                   (i.itemCode === highlightedItemId ||
                     i._id === highlightedItemId);
 
-                // Calculate tabIndex for each input field - start from 2 (after search)
+                // Calculate tabIndex for each input field - only for new items in bill table
                 // Each row has 2-3 focusable elements: product (if editable), quantity, mrp
                 const focusableFieldsPerRow = isProductEditable ? 3 : 2;
-                const baseTabIndex = 2 + index * focusableFieldsPerRow;
-                const productTabIndex = isProductEditable ? baseTabIndex : null;
-                const quantityTabIndex = isProductEditable
-                  ? baseTabIndex + 1
-                  : baseTabIndex;
-                const mrpTabIndex = isProductEditable
-                  ? baseTabIndex + 2
-                  : baseTabIndex + 1;
+                const newItemIndex = items
+                  .slice(0, index)
+                  .filter((item) => item.isNew).length;
+                const baseTabIndex = i.isNew
+                  ? 2 + newItemIndex * focusableFieldsPerRow
+                  : -1;
+                const productTabIndex =
+                  isProductEditable && i.isNew
+                    ? baseTabIndex
+                    : i.isNew
+                    ? -1
+                    : null;
+                const quantityTabIndex = i.isNew
+                  ? isProductEditable
+                    ? baseTabIndex + 1
+                    : baseTabIndex
+                  : -1;
+                const mrpTabIndex = i.isNew
+                  ? isProductEditable
+                    ? baseTabIndex + 2
+                    : baseTabIndex + 1
+                  : -1;
 
                 return (
                   <tr
@@ -901,19 +921,23 @@ const Table = ({
                             }
                           }
 
-                          // Tab key: Save and move to next field
+                          // Tab key: Only move to next field for new items
                           if (e.key === "Tab" && !e.shiftKey) {
                             e.preventDefault();
-                            // Small delay to prevent focus loss
-                            setTimeout(() => {
-                              // Move to MRP field
-                              const mrpInput = document.querySelector(
-                                `input[tabindex="${mrpTabIndex}"]`
-                              );
-                              if (mrpInput) {
-                                mrpInput.focus();
-                              }
-                            }, 10);
+
+                            // Only allow Tab traversal for new items
+                            if (i.isNew) {
+                              // Small delay to prevent focus loss
+                              setTimeout(() => {
+                                // Move to MRP field
+                                const mrpInput = document.querySelector(
+                                  `input[tabindex="${mrpTabIndex}"]`
+                                );
+                                if (mrpInput) {
+                                  mrpInput.focus();
+                                }
+                              }, 10);
+                            }
                             return;
                           }
 
@@ -985,28 +1009,8 @@ const Table = ({
                             setEditingItemId(null);
                             setFocusedField(null);
                           }
-                          // For new items, only save if the item is complete (has product, quantity, and MRP)
-                          if (
-                            i.isNew &&
-                            i.product &&
-                            i.product.trim() !== "" &&
-                            i.quantity &&
-                            i.quantity > 0 &&
-                            i.mrp &&
-                            i.mrp > 0
-                          ) {
-                            saveItemById(i._id).then((result) => {
-                              if (result.success) {
-                                showToast(
-                                  "New item added successfully!",
-                                  "success"
-                                );
-                                // Only reset editing state after successful save
-                                setEditingItemId(null);
-                                setFocusedField(null);
-                              }
-                            });
-                          }
+                          // Note: Removed automatic save on blur for MRP field
+                          // Items should only be saved on Enter key press, not on Tab/blur
                         }}
                         onKeyDown={(e) => {
                           // Alt+WASD navigation for mrp field
@@ -1206,104 +1210,24 @@ const Table = ({
                             }
                           }
 
-                          // Tab key: Save and move to next row or Add Item button
+                          // Tab key: Only work for new items, go back to searchbar
                           if (e.key === "Tab" && !e.shiftKey) {
                             e.preventDefault();
-                            // For new items, only save if complete
-                            if (
-                              i.isNew &&
-                              (!i.product ||
-                                i.product.trim() === "" ||
-                                !i.quantity ||
-                                i.quantity <= 0 ||
-                                !i.mrp ||
-                                i.mrp <= 0)
-                            ) {
-                              // Don't save incomplete items, just move to next
-                              if (index === items.length - 1) {
-                                // Last row: Move to Add Item button
-                                if (onLastCellTab) {
-                                  onLastCellTab();
-                                }
-                              } else {
-                                // Not last row: Move to next row's first input field
-                                const nextRowFirstInput =
-                                  document.querySelector(
-                                    `input[tabindex="${
-                                      2 +
-                                      (index + 1) * (isProductEditable ? 3 : 2)
-                                    }"]`
-                                  );
-                                if (nextRowFirstInput) {
-                                  nextRowFirstInput.focus();
-                                  // Scroll to ensure the next row is visible
-                                  nextRowFirstInput.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                  });
-                                }
-                              }
-                              return;
-                            }
-                            // Save the item first - only if there are actual changes for existing items
-                            if (i.isNew || hasItemChanged(i._id)) {
-                              saveItemById(i._id).then((result) => {
-                                if (result.success && i.isNew) {
-                                  showToast(
-                                    "New item added successfully!",
-                                    "success"
-                                  );
-                                }
+                            e.stopPropagation();
 
-                                if (index === items.length - 1) {
-                                  // Last row: Move to Add Item button
-                                  if (onLastCellTab) {
-                                    onLastCellTab();
-                                  }
-                                } else {
-                                  // Not last row: Move to next row's first input field
-                                  const nextRowFirstInput =
-                                    document.querySelector(
-                                      `input[tabindex="${
-                                        2 +
-                                        (index + 1) *
-                                          (isProductEditable ? 3 : 2)
-                                      }"]`
-                                    );
-                                  if (nextRowFirstInput) {
-                                    nextRowFirstInput.focus();
-                                    // Scroll to ensure the next row is visible
-                                    nextRowFirstInput.scrollIntoView({
-                                      behavior: "smooth",
-                                      block: "center",
-                                    });
-                                  }
-                                }
-                              });
-                            } else {
-                              // No changes, just move to next
-                              if (index === items.length - 1) {
-                                // Last row: Move to Add Item button
-                                if (onLastCellTab) {
-                                  onLastCellTab();
-                                }
-                              } else {
-                                // Not last row: Move to next row's first input field
-                                const nextRowFirstInput =
-                                  document.querySelector(
-                                    `input[tabindex="${
-                                      2 +
-                                      (index + 1) * (isProductEditable ? 3 : 2)
-                                    }"]`
-                                  );
-                                if (nextRowFirstInput) {
-                                  nextRowFirstInput.focus();
-                                  // Scroll to ensure the next row is visible
-                                  nextRowFirstInput.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "center",
-                                  });
-                                }
+                            console.log(
+                              "Tab pressed in MRP field, item isNew:",
+                              i.isNew
+                            );
+
+                            // Only allow Tab traversal for new items
+                            if (i.isNew) {
+                              console.log(
+                                "Calling onLastCellTab to go back to search bar"
+                              );
+                              // For new items, always go back to searchbar after MRP
+                              if (onLastCellTab) {
+                                onLastCellTab();
                               }
                             }
                             return;
@@ -1434,4 +1358,4 @@ const Table = ({
   );
 };
 
-export default Table;
+export default BillTable;

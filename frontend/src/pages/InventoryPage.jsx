@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import SlideBar from "../components/SlideBar";
 import SearchItemInventory from "../components/SearchItemInventory";
-import Table from "../components/Table";
+import InventoryTable from "../components/InventoryTable";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { HiPlus } from "react-icons/hi2";
@@ -420,7 +420,7 @@ const InventoryPage = () => {
           {/* Table Section */}
           <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
             <div>
-              <Table
+              <InventoryTable
                 items={items}
                 setItems={setItems}
                 highlightedItemId={highlightedItemId}

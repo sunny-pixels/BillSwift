@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import SlideBar from "../components/SlideBar";
 import SearchItemBill from "../components/SearchItemBill";
-import Table from "../components/Table";
+import BillTable from "../components/BillTable";
 import Button from "../components/Button";
 import PhoneNumberModal from "../components/PhoneNumberModal";
 import QRCodeModal from "../components/QRCodeModal";
@@ -21,24 +21,119 @@ const BillPage = () => {
   const [tabs, setTabs] = useState(() => {
     try {
       const savedTabs = localStorage.getItem("billTabs");
+      console.log("BillPage - Loading tabs from localStorage:", savedTabs);
       if (savedTabs) {
         const parsed = JSON.parse(savedTabs);
+        console.log("BillPage - Parsed tabs from localStorage:", parsed);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-    } catch (_) {}
-    return [{ id: "1", name: "Bill 1", items: [] }];
+    } catch (error) {
+      console.error("BillPage - Error loading tabs from localStorage:", error);
+    }
+    const defaultTabs = [{ id: "1", name: "Bill 1", items: [] }];
+    console.log("BillPage - Using default tabs:", defaultTabs);
+    return defaultTabs;
   });
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const savedActive = localStorage.getItem("activeBillTab");
+      console.log(
+        "BillPage - Loading activeTab from localStorage:",
+        savedActive
+      );
       if (savedActive) return savedActive;
-    } catch (_) {}
+    } catch (error) {
+      console.error(
+        "BillPage - Error loading activeTab from localStorage:",
+        error
+      );
+    }
+    console.log("BillPage - Using default activeTab: 1");
     return "1";
   });
 
   // Get current tab's items
   const currentTab = tabs.find((tab) => tab.id === activeTab);
   const items = currentTab ? currentTab.items : [];
+
+  // Safety check: if currentTab is not found, ensure we have a valid tab
+  useEffect(() => {
+    if (!currentTab && tabs.length > 0) {
+      console.log(
+        "BillPage - currentTab not found, fixing activeTab to first tab"
+      );
+      setActiveTab(tabs[0].id);
+    }
+  }, [currentTab, tabs]);
+
+  // Ensure initial tab is properly set up
+  useEffect(() => {
+    if (tabs.length === 0) {
+      console.log("BillPage - No tabs found, creating initial tab");
+      setTabs([{ id: "1", name: "Bill 1", items: [] }]);
+      setActiveTab("1");
+    }
+  }, [tabs.length]);
+
+  // Initial setup effect - runs once on mount
+  useEffect(() => {
+    console.log("BillPage - Initial setup effect running");
+    console.log("BillPage - Initial tabs:", tabs);
+    console.log("BillPage - Initial activeTab:", activeTab);
+
+    // Check if localStorage has corrupted data
+    try {
+      const savedTabs = localStorage.getItem("billTabs");
+      const savedActive = localStorage.getItem("activeBillTab");
+
+      if (savedTabs && savedActive) {
+        const parsedTabs = JSON.parse(savedTabs);
+        const activeTabExists = parsedTabs.find(
+          (tab) => tab.id === savedActive
+        );
+
+        if (!activeTabExists) {
+          console.log(
+            "BillPage - localStorage has invalid activeTab, clearing localStorage"
+          );
+          localStorage.removeItem("billTabs");
+          localStorage.removeItem("activeBillTab");
+          // Force re-initialization
+          setTabs([{ id: "1", name: "Bill 1", items: [] }]);
+          setActiveTab("1");
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("BillPage - Error checking localStorage:", error);
+      localStorage.removeItem("billTabs");
+      localStorage.removeItem("activeBillTab");
+    }
+
+    // Ensure we have at least one tab
+    if (tabs.length === 0) {
+      console.log("BillPage - Creating initial tab in setup effect");
+      setTabs([{ id: "1", name: "Bill 1", items: [] }]);
+    }
+
+    // Ensure we have a valid activeTab
+    if (!activeTab && tabs.length > 0) {
+      console.log("BillPage - Setting activeTab to first tab in setup effect");
+      setActiveTab(tabs[0].id);
+    }
+  }, []); // Run only once on mount
+
+  // Debug logging
+  useEffect(() => {
+    console.log("BillPage - Current activeTab:", activeTab);
+    console.log("BillPage - Current tab:", currentTab);
+    console.log("BillPage - Items being passed to BillTable:", items);
+  }, [activeTab, currentTab, items]);
+
+  // Debug logging for activeTab changes
+  useEffect(() => {
+    console.log("BillPage - activeTab changed to:", activeTab);
+  }, [activeTab]);
 
   const itemsRef = useRef([]);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -120,6 +215,23 @@ const BillPage = () => {
 
   // Function to add items from search
   const addItem = (item) => {
+    console.log("addItem called with:", item);
+    console.log("Current activeTab:", activeTab);
+    console.log("Current tabs:", tabs);
+
+    // Safety check: ensure we have a valid activeTab
+    if (!activeTab) {
+      console.error("addItem: No activeTab found, cannot add item");
+      return;
+    }
+
+    // Safety check: ensure the activeTab exists in tabs
+    const currentTabExists = tabs.find((tab) => tab.id === activeTab);
+    if (!currentTabExists) {
+      console.error("addItem: activeTab not found in tabs, cannot add item");
+      return;
+    }
+
     // Generate a temporary ID for new items
     const newItem = {
       _id: Date.now().toString(), // Temporary ID for newly added items
@@ -131,11 +243,15 @@ const BillPage = () => {
       isNew: true, // Mark as new item
     };
 
-    setTabs((prevTabs) =>
-      prevTabs.map((tab) =>
+    console.log("New item to add:", newItem);
+
+    setTabs((prevTabs) => {
+      const updatedTabs = prevTabs.map((tab) =>
         tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
-      )
-    );
+      );
+      console.log("Updated tabs:", updatedTabs);
+      return updatedTabs;
+    });
     // Remember the last added item's id so Tab can jump to it
     setLastAddedItemId(newItem._id);
   };
@@ -186,6 +302,8 @@ const BillPage = () => {
 
   // Tab management functions
   const handleTabChange = (tabId) => {
+    console.log("BillPage - handleTabChange called with tabId:", tabId);
+    console.log("BillPage - Current tabs before change:", tabs);
     setActiveTab(tabId);
   };
 
@@ -573,6 +691,13 @@ const BillPage = () => {
                       return;
                     }
 
+                    // Only focus on new items (items with isNew: true)
+                    const newItems = items.filter((item) => item.isNew);
+                    if (newItems.length === 0) {
+                      // No new items, stay in search bar
+                      return;
+                    }
+
                     // Try to focus the most recently added item's first editable input (quantity)
                     if (lastAddedItemId) {
                       const row = document.querySelector(
@@ -589,18 +714,17 @@ const BillPage = () => {
                       }
                     }
 
-                    // Fallback: Focus on the first row's first input field (quantity field)
-                    const firstInput = document.querySelector(
-                      'input[tabindex="2"]'
+                    // Fallback: Focus on the first new item's quantity field
+                    const firstNewItem = newItems[0];
+                    const firstNewItemRow = document.querySelector(
+                      `tr[data-item-id="${firstNewItem._id}"]`
                     );
-                    if (firstInput) {
-                      firstInput.focus();
-                    } else {
-                      const allInputs = document.querySelectorAll(
+                    if (firstNewItemRow) {
+                      const qtyInput = firstNewItemRow.querySelector(
                         'input[type="number"]'
                       );
-                      if (allInputs.length > 0) {
-                        allInputs[0].focus();
+                      if (qtyInput) {
+                        qtyInput.focus();
                       }
                     }
                   }}
@@ -627,7 +751,7 @@ const BillPage = () => {
           {/* Table Section */}
           <div className={`px-6 ${isDarkMode ? "bg-[#1A1A1C]" : "bg-white"}`}>
             <div>
-              <Table
+              <BillTable
                 items={items}
                 setItems={setItems}
                 onUpdateItem={updateItem}
@@ -658,25 +782,16 @@ const BillPage = () => {
                 cellClassName="px-6 py-4 rounded-none"
                 onDeleteClick={handleDeleteClick}
                 onLastCellTab={() => {
-                  console.log(
-                    "onLastCellTab called, whatsappStatus:",
-                    whatsappStatus
+                  console.log("onLastCellTab called - focusing search bar");
+                  // Focus the search bar when tabbing from the last cell (MRP field)
+                  const searchInput = document.querySelector(
+                    'input[placeholder="Add Products"]'
                   );
-                  // Focus the Connect WhatsApp button when tabbing from the last cell
-                  if (whatsappStatus === "connected") {
-                    // If WhatsApp is connected, focus the Print Bill button directly
-                    console.log("WhatsApp connected, focusing Print button");
-                    if (printButtonRef.current) {
-                      printButtonRef.current.focus();
-                    }
+                  if (searchInput) {
+                    console.log("Found search input, focusing it");
+                    searchInput.focus();
                   } else {
-                    // If WhatsApp is not connected, focus the Connect WhatsApp button
-                    console.log(
-                      "WhatsApp not connected, focusing Connect WhatsApp button"
-                    );
-                    if (connectWhatsAppButtonRef.current) {
-                      connectWhatsAppButtonRef.current.focus();
-                    }
+                    console.log("Search input not found");
                   }
                 }}
               />
@@ -698,9 +813,12 @@ const BillPage = () => {
               onKeyDown={(e) => {
                 if (e.key === "Tab" && !e.shiftKey) {
                   e.preventDefault();
-                  // Move focus to Print Bill button
-                  if (printButtonRef.current) {
-                    printButtonRef.current.focus();
+                  // Move focus back to search bar
+                  const searchInput = document.querySelector(
+                    'input[placeholder="Add Products"]'
+                  );
+                  if (searchInput) {
+                    searchInput.focus();
                   }
                 }
               }}
@@ -740,7 +858,7 @@ const BillPage = () => {
                         e.preventDefault();
                         // Move focus back to search bar
                         const searchInput = document.querySelector(
-                          'input[placeholder="Search for products..."]'
+                          'input[placeholder="Add Products"]'
                         );
                         if (searchInput) {
                           searchInput.focus();

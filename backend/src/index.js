@@ -4,6 +4,7 @@ import cors from "cors";
 import Item from "./models/item.model.js";
 import mongoose from "mongoose";
 import { connectDB } from "./lib/db.js";
+import billsRouter from "./routes/bills.route.js";
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.get("/", (req, res) => {
     .then((items) => res.json(items))
     .catch((err) => console.log(err));
 });
+
+app.use("/bills", billsRouter);
 
 app.get("/getItem/:id", (req, res) => {
   const id = req.params.id;

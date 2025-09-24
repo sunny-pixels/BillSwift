@@ -117,6 +117,11 @@ const SearchItemBill = ({
 
   const handleResultClick = (result) => {
     try {
+      console.log(
+        "SearchItemBill - handleResultClick called with result:",
+        result
+      );
+
       // Create item object
       const item = {
         product: result.product,
@@ -128,6 +133,9 @@ const SearchItemBill = ({
           result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
         netamt: 1 * (result.mrp || 0),
       };
+
+      console.log("SearchItemBill - Created item:", item);
+      console.log("SearchItemBill - Calling onItemSelect with item:", item);
 
       // Add item to table
       onItemSelect(item);
@@ -167,6 +175,12 @@ const SearchItemBill = ({
               itemCode: "MANUAL-" + Date.now().toString().slice(-6),
               netamt: quantity * mrp,
             };
+
+            console.log("SearchItemBill - Enter key - Created item:", item);
+            console.log(
+              "SearchItemBill - Enter key - Calling onItemSelect with item:",
+              item
+            );
 
             // Add item to table
             onItemSelect(item);
