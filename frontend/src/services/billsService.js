@@ -1,12 +1,25 @@
 // Bills service for API calls
+// const BACKEND_BASE_URL =
+//   (typeof import.meta !== "undefined" &&
+//     import.meta.env &&
+//     (import.meta.env.VITE_BACKEND_BASE_URL ||
+//       import.meta.env.VITE_API_BASE_URL)) ||
+//   (typeof process !== "undefined" &&
+//     process.env &&
+//     (process.env.VITE_BACKEND_BASE_URL || process.env.VITE_API_BASE_URL)) ||
+//   "http://localhost:5001";
+// billsService.js
 const BACKEND_BASE_URL =
   (typeof import.meta !== "undefined" &&
     import.meta.env &&
     (import.meta.env.VITE_BACKEND_BASE_URL ||
-      import.meta.env.VITE_API_BASE_URL)) ||
+      import.meta.env.VITE_API_BASE_URL ||
+      import.meta.env.VITE_API_URL)) || // ← add this
   (typeof process !== "undefined" &&
     process.env &&
-    (process.env.VITE_BACKEND_BASE_URL || process.env.VITE_API_BASE_URL)) ||
+    (process.env.VITE_BACKEND_BASE_URL ||
+      process.env.VITE_API_BASE_URL ||
+      process.env.VITE_API_URL)) || // ← and this
   "http://localhost:5001";
 
 // Function to get all bills
