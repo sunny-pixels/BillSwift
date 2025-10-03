@@ -5,6 +5,7 @@ import ShortcutsModal from "./components/ShortcutsModal";
 
 import HomePage from "./pages/HomePage";
 import BillPage from "./pages/BillPage";
+import BillsPage from "./pages/BillsPage";
 import InventoryPage from "./pages/InventoryPage";
 
 const App = () => {
@@ -13,10 +14,15 @@ const App = () => {
 
   useEffect(() => {
     const handleGlobalHotkeys = (e) => {
-      const isInput = ["INPUT", "TEXTAREA"].includes(e.target.tagName) || e.target.isContentEditable;
+      const isInput =
+        ["INPUT", "TEXTAREA"].includes(e.target.tagName) ||
+        e.target.isContentEditable;
 
       // Ctrl+K or / => focus global search
-      if ((e.ctrlKey && (e.key === "k" || e.key === "K")) || (!isInput && e.key === "/")) {
+      if (
+        (e.ctrlKey && (e.key === "k" || e.key === "K")) ||
+        (!isInput && e.key === "/")
+      ) {
         e.preventDefault();
         const input = document.getElementById("global-search-input");
         if (input) {
@@ -27,7 +33,10 @@ const App = () => {
       }
 
       // Ctrl+~ (also support Ctrl+` via Backquote) => toggle shortcuts modal
-      if (e.ctrlKey && (e.key === "~" || e.key === "`" || e.code === "Backquote")) {
+      if (
+        e.ctrlKey &&
+        (e.key === "~" || e.key === "`" || e.code === "Backquote")
+      ) {
         e.preventDefault();
         setShowShortcuts((prev) => !prev);
         return;
@@ -55,10 +64,14 @@ const App = () => {
   return (
     <div>
       <Toaster position="top-right" />
-      <ShortcutsModal isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <ShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
       <Routes>
-        <Route path="/" element={<HomePage />} /> 
-        <Route path="/bill" element={<BillPage />} /> 
+        <Route path="/" element={<HomePage />} />
+        <Route path="/bill" element={<BillPage />} />
+        <Route path="/bills" element={<BillsPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/inventory/:id" element={<InventoryPage />} />
       </Routes>

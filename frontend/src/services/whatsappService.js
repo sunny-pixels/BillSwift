@@ -1,5 +1,13 @@
 // WhatsApp service that communicates with our WhatsApp server
-const WHATSAPP_SERVER_URL = 'https://whatsappserverbillswift.onrender.com'; // Change this to your WhatsApp server URL if different
+const WHATSAPP_SERVER_URL =
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    (import.meta.env.VITE_WHATSAPP_SERVER_URL ||
+      import.meta.env.VITE_API_BASE_URL)) ||
+  (typeof process !== "undefined" &&
+    process.env &&
+    (process.env.VITE_WHATSAPP_SERVER_URL || process.env.VITE_API_BASE_URL)) ||
+  "http://localhost:5002";
 
 // Function to check WhatsApp connection status and get QR code if needed
 const checkWhatsAppStatus = async () => {
@@ -16,15 +24,37 @@ const checkWhatsAppStatus = async () => {
 // Function to clear WhatsApp session
 const clearSession = async () => {
   try {
-    const response = await fetch(`${WHATSAPP_SERVER_URL}/api/whatsapp/clear-session`, {
-      method: "POST",
-    });
+    const response = await fetch(
+      `${WHATSAPP_SERVER_URL}/api/whatsapp/clear-session`,
+      {
+        method: "POST",
+      }
+    );
     if (!response.ok) {
       throw new Error("Failed to clear session");
     }
     return true;
   } catch (error) {
     console.error("Error clearing WhatsApp session:", error);
+    return false;
+  }
+};
+
+// Function to force new QR generation
+const forceNewQr = async () => {
+  try {
+    const response = await fetch(
+      `${WHATSAPP_SERVER_URL}/api/whatsapp/force-new-qr`,
+      {
+        method: "POST",
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to generate new QR");
+    }
+    return true;
+  } catch (error) {
+    console.error("Error forcing new QR:", error);
     return false;
   }
 };
@@ -69,4 +99,10 @@ const sendWhatsAppMessage = async (phoneNumber, message, pdfBuffer) => {
   }
 };
 
-export { checkWhatsAppStatus, sendWhatsAppMessage, clearSession };
+export {
+  checkWhatsAppStatus,
+  sendWhatsAppMessage,
+  clearSession,
+  forceNewQr,
+  WHATSAPP_SERVER_URL,
+};

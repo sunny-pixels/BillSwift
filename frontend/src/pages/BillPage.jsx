@@ -213,6 +213,59 @@ const BillPage = () => {
     checkStatus();
   }, []);
 
+  // Listen for inventory updates and sync bill values
+  useEffect(() => {
+    const handleInventoryUpdate = (event) => {
+      const { itemId, product, quantity, mrp } = event.detail;
+      console.log("🔄 Inventory updated:", { itemId, product, quantity, mrp });
+
+      // Update all tabs that contain this item
+      setTabs((prevTabs) => {
+        return prevTabs.map((tab) => {
+          const hasMatchingItem = tab.items?.some(
+            (item) =>
+              item._id === itemId ||
+              (item.product &&
+                item.product.toLowerCase() === product.toLowerCase())
+          );
+
+          if (hasMatchingItem) {
+            console.log(`📋 Updating tab "${tab.name}" with inventory changes`);
+            const updatedItems = tab.items.map((item) => {
+              if (
+                item._id === itemId ||
+                (item.product &&
+                  item.product.toLowerCase() === product.toLowerCase())
+              ) {
+                return {
+                  ...item,
+                  mrp: mrp, // Always sync MRP from inventory
+                  // Keep bill quantity as is, don't sync quantity
+                  netamt: item.quantity * mrp, // Recalculate with new MRP
+                };
+              }
+              return item;
+            });
+
+            return { ...tab, items: updatedItems };
+          }
+          return tab;
+        });
+      });
+
+      // Show a toast notification about the sync
+      toast.success(`Bill updated: "${product}" synced with inventory`, {
+        duration: 2000,
+      });
+    };
+
+    window.addEventListener("inventoryUpdated", handleInventoryUpdate);
+
+    return () => {
+      window.removeEventListener("inventoryUpdated", handleInventoryUpdate);
+    };
+  }, []);
+
   // Function to add items from search
   const addItem = (item) => {
     console.log("addItem called with:", item);
@@ -547,6 +600,34 @@ const BillPage = () => {
 
       if (success) {
         toast.success("Invoice sent successfully via WhatsApp!");
+
+        // Build bill payload and persist to backend
+        const subtotal = items.reduce(
+          (sum, item) => sum + (Number(item?.netamt) || 0),
+          0
+        );
+        const payload = {
+          billId: currentTab?.name || "Bill",
+          customer: { phone: phoneNumber },
+          items: items.map((i) => ({
+            product: i.product,
+            mrp: Number(i.mrp) || 0,
+            quantity: Number(i.quantity) || 0,
+            netamt: Number(i.netamt) || 0,
+          })),
+          subtotal,
+          discount: 0,
+          total: subtotal,
+          status: "finalized",
+        };
+
+        try {
+          await axios.post("http://localhost:5001/bills", payload);
+          toast.success("Bill saved to database");
+        } catch (err) {
+          console.error("Error saving bill:", err);
+          toast.error("Failed to save bill to database");
+        }
       } else {
         toast.error("Failed to send invoice via WhatsApp");
       }
@@ -800,37 +881,49 @@ const BillPage = () => {
         </div>
 
         <div className="flex justify-between items-start">
-          {whatsappStatus === "connected" ? (
-            <div className={`text-[#767c8f] text-sm flex items-center`}>
-              <span className="w-2 h-2 bg-[#25D366] rounded-full mr-2"></span>
-              WhatsApp Connected
-            </div>
-          ) : (
-            <button
-              ref={connectWhatsAppButtonRef}
-              tabIndex={0}
-              onClick={() => setShowQRModal(true)}
-              onKeyDown={(e) => {
-                if (e.key === "Tab" && !e.shiftKey) {
-                  e.preventDefault();
-                  // Move focus back to search bar
-                  const searchInput = document.querySelector(
-                    'input[placeholder="Add Products"]'
-                  );
-                  if (searchInput) {
-                    searchInput.focus();
+          <div className="flex items-center gap-4">
+            {whatsappStatus === "connected" ? (
+              <div className={`text-[#767c8f] text-sm flex items-center`}>
+                <span className="w-2 h-2 bg-[#25D366] rounded-full mr-2"></span>
+                WhatsApp Connected
+              </div>
+            ) : (
+              <button
+                ref={connectWhatsAppButtonRef}
+                tabIndex={0}
+                onClick={() => setShowQRModal(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Tab" && !e.shiftKey) {
+                    e.preventDefault();
+                    // Move focus back to search bar
+                    const searchInput = document.querySelector(
+                      'input[placeholder="Add Products"]'
+                    );
+                    if (searchInput) {
+                      searchInput.focus();
+                    }
                   }
-                }
-              }}
+                }}
+                className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
+                  isDarkMode
+                    ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
+                    : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
+                }`}
+              >
+                Connect WhatsApp
+              </button>
+            )}
+            <button
+              onClick={() => (window.location.href = "/bills")}
               className={`px-4 py-2 font-medium rounded-[24px] inline-flex items-center transition-all duration-200 hover:scale-105 focus:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3379E9] focus:ring-offset-2 focus:drop-shadow-[0_0_15px_rgba(51,121,233,0.4)] ${
                 isDarkMode
-                  ? "bg-[#2a2a2d] hover:bg-[#1A1A1C] text-white"
-                  : "bg-[#f4f4f6] hover:bg-[#e8e8ea] text-[#141416]"
+                  ? "bg-[#3379E9] hover:bg-[#1466e4] text-white"
+                  : "bg-[#3379E9] hover:bg-[#1466e4] text-white"
               }`}
             >
-              Connect WhatsApp
+              View Bills
             </button>
-          )}
+          </div>
 
           <div className="flex flex-col items-end gap-4">
             <div className="relative w-[150px] h-[150px] rounded-[24px] overflow-hidden">

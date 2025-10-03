@@ -635,6 +635,18 @@ const InventoryTable = ({
                                   saveItemById(i._id).then((result) => {
                                     if (result.success) {
                                       showToast("Value updated", "success");
+                                      // Notify other components that inventory was updated
+                                      window.dispatchEvent(
+                                        new CustomEvent("inventoryUpdated", {
+                                          detail: {
+                                            itemId: i._id,
+                                            updatedItem: i,
+                                            product: i.product,
+                                            quantity: i.quantity,
+                                            mrp: i.mrp,
+                                          },
+                                        })
+                                      );
                                     }
                                   });
                                 }
@@ -874,6 +886,18 @@ const InventoryTable = ({
                                 saveItemById(i._id).then((result) => {
                                   if (result.success) {
                                     showToast("Value updated", "success");
+                                    // Notify other components that inventory was updated
+                                    window.dispatchEvent(
+                                      new CustomEvent("inventoryUpdated", {
+                                        detail: {
+                                          itemId: i._id,
+                                          updatedItem: i,
+                                          product: i.product,
+                                          quantity: i.quantity,
+                                          mrp: i.mrp,
+                                        },
+                                      })
+                                    );
                                   }
                                 });
                               }
@@ -1148,6 +1172,18 @@ const InventoryTable = ({
                                       );
                                     } else {
                                       showToast("Value updated", "success");
+                                      // Notify other components that inventory was updated
+                                      window.dispatchEvent(
+                                        new CustomEvent("inventoryUpdated", {
+                                          detail: {
+                                            itemId: i._id,
+                                            updatedItem: i,
+                                            product: i.product,
+                                            quantity: i.quantity,
+                                            mrp: i.mrp,
+                                          },
+                                        })
+                                      );
                                     }
 
                                     if (index === items.length - 1) {
@@ -1356,6 +1392,18 @@ const InventoryTable = ({
                                   );
                                 } else {
                                   showToast("Value updated", "success");
+                                  // Notify other components that inventory was updated
+                                  window.dispatchEvent(
+                                    new CustomEvent("inventoryUpdated", {
+                                      detail: {
+                                        itemId: i._id,
+                                        updatedItem: i,
+                                        product: i.product,
+                                        quantity: i.quantity,
+                                        mrp: i.mrp,
+                                      },
+                                    })
+                                  );
                                 }
                                 setEditingItemId(null);
                               }

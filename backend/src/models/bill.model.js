@@ -26,10 +26,27 @@ const BillSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["draft", "finalized", "canceled"],
-      default: "draft",
+      // Frontend posts finalized bills from BillPage; default to finalized
+      default: "finalized",
     },
   },
   { timestamps: true }
 );
+
+// Ensure monetary fields are computed if not supplied explicitly
+BillSchema.pre("save", function (next) {
+  // Compute subtotal from items.netamt when not provided or zero
+  if (!this.subtotal || this.subtotal === 0) {
+    this.subtotal = (this.items || []).reduce(
+      (sum, item) => sum + (Number(item?.netamt) || 0),
+      0
+    );
+  }
+  // Normalize discount
+  this.discount = Number(this.discount) || 0;
+  // Compute total
+  this.total = Number(this.subtotal) - Number(this.discount);
+  next();
+});
 
 export default mongoose.model("Bill", BillSchema);
