@@ -150,6 +150,24 @@ const BillPage = () => {
   const printButtonRef = useRef(null);
   const connectWhatsAppButtonRef = useRef(null);
 
+  // Utility: strip matching country code digits from the start of a phone number
+  const stripMatchingCountryCode = (countryCode, digits) => {
+    try {
+      const codeDigits = String(countryCode || "+").replace(/\D/g, "");
+      const onlyDigits = String(digits || "").replace(/\D/g, "");
+      if (
+        codeDigits &&
+        onlyDigits.startsWith(codeDigits) &&
+        onlyDigits.length > 10
+      ) {
+        return onlyDigits.slice(codeDigits.length);
+      }
+      return onlyDigits;
+    } catch {
+      return String(digits || "");
+    }
+  };
+
   const triggerPrintWithAnimation = () => {
     const button = printButtonRef.current;
     if (button) {
@@ -542,10 +560,16 @@ const BillPage = () => {
     const pdfBuffer = doc.output("arraybuffer");
     setPdfBuffer(pdfBuffer);
 
-    // Check WhatsApp status before showing phone modal
+    // If a phone is already stored for this tab, send immediately without asking
+    const savedPhone = (currentTab && currentTab.customerPhone) || "";
     if (whatsappStatus === "connected") {
-      // Directly show phone modal without showing connection status
-      setShowPhoneModal(true);
+      if (savedPhone && savedPhone.trim() !== "") {
+        // Auto-send to saved phone
+        handlePhoneSubmit(savedPhone.trim());
+      } else {
+        // Ask for phone number
+        setShowPhoneModal(true);
+      }
     } else {
       // Show QR code modal to connect WhatsApp - ONLY ONCE
       setShowQRModal(true);
@@ -574,6 +598,19 @@ const BillPage = () => {
 
   const handlePhoneSubmit = async (phoneNumber) => {
     try {
+      // Persist numeric local phone on the current tab for future prints
+      const inputDigits = (phoneNumber || "").replace(/\D/g, "").trim();
+      const code = (currentTab?.customerPhoneCode || "+91").replace(/\s/g, "");
+      const localDigits = stripMatchingCountryCode(code, inputDigits);
+      const formattedPhone = `${code}${localDigits}`;
+      if (localDigits) {
+        setTabs((prevTabs) =>
+          prevTabs.map((tab) =>
+            tab.id === activeTab ? { ...tab, customerPhone: localDigits } : tab
+          )
+        );
+      }
+
       // Create message with product details
       const message =
         `*Invoice Details*\n\n` +
@@ -591,7 +628,7 @@ const BillPage = () => {
 
       // Send WhatsApp message and PDF
       const success = await sendWhatsAppMessage(
-        phoneNumber,
+        formattedPhone,
         message,
         pdfBuffer
       );
@@ -606,7 +643,7 @@ const BillPage = () => {
         );
         const payload = {
           billId: currentTab?.name || "Bill",
-          customer: { phone: phoneNumber },
+          customer: { phone: formattedPhone },
           items: items.map((i) => ({
             product: i.product,
             mrp: Number(i.mrp) || 0,
@@ -745,6 +782,59 @@ const BillPage = () => {
               >
                 {currentTab?.name || "Bill 1"}
               </span>
+              <div
+                className={`flex items-center rounded-full overflow-hidden border ${
+                  isDarkMode ? "border-white/10" : "border-black/5"
+                }`}
+              >
+                <input
+                  type="text"
+                  value={currentTab?.customerPhoneCode || "+91"}
+                  onChange={(e) => {
+                    // Allow + and digits only
+                    let v = e.target.value.replace(/[^+\d]/g, "");
+                    if (!v.startsWith("+")) v = "+" + v.replace(/\+/g, "");
+                    setTabs((prev) =>
+                      prev.map((tab) =>
+                        tab.id === activeTab
+                          ? { ...tab, customerPhoneCode: v }
+                          : tab
+                      )
+                    );
+                  }}
+                  className={`px-3 py-1 text-sm font-medium outline-none ${
+                    isDarkMode
+                      ? "bg-[#2a2a2d] text-white"
+                      : "bg-[#f4f4f6] text-[#141416]"
+                  }`}
+                  style={{ width: 60 }}
+                  title="Country code"
+                />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Phone"
+                  value={currentTab?.customerPhone || ""}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, "");
+                    setTabs((prev) =>
+                      prev.map((tab) =>
+                        tab.id === activeTab
+                          ? { ...tab, customerPhone: value }
+                          : tab
+                      )
+                    );
+                  }}
+                  className={`px-3 py-1 text-sm font-medium outline-none ${
+                    isDarkMode
+                      ? "bg-[#2a2a2d] text-white"
+                      : "bg-[#f4f4f6] text-[#141416]"
+                  }`}
+                  style={{ width: 140 }}
+                  title="Customer phone for this bill"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <button
