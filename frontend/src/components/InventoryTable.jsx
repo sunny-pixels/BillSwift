@@ -197,7 +197,8 @@ const InventoryTable = ({
         // Calculate net amount based on the current values
         const quantity = Number(updatedItem.quantity || 0);
         const mrp = Number(updatedItem.mrp || 0);
-        updatedItem.netamt = quantity * mrp;
+        const toOneDecimalTrunc = (v) => Math.trunc(Number(v) * 10) / 10;
+        updatedItem.netamt = toOneDecimalTrunc(quantity * mrp);
 
         onUpdateItem(itemId, updatedItem);
       }
@@ -221,7 +222,8 @@ const InventoryTable = ({
           // Calculate net amount based on the current values
           const quantity = Number(nextItem.quantity || 0);
           const mrp = Number(nextItem.mrp || 0);
-          nextItem.netamt = quantity * mrp;
+          const toOneDecimalTrunc = (v) => Math.trunc(Number(v) * 10) / 10;
+          nextItem.netamt = toOneDecimalTrunc(quantity * mrp);
 
           return nextItem;
         })
@@ -303,7 +305,7 @@ const InventoryTable = ({
         product: item.product.trim(),
         quantity: quantity,
         mrp: mrp,
-        netamt: quantity * mrp,
+        netamt: Math.trunc(quantity * mrp * 10) / 10,
       };
 
       console.log("Payload to be sent:", payload);
@@ -1373,7 +1375,9 @@ const InventoryTable = ({
                     {/* Net amount + action cell - light grey, centered */}
                     <td className={`p-0 text-center relative w-[20%]`}>
                       <div className="w-full h-full px-6 py-4 flex items-center justify-center">
-                        <span>{i.netamt}</span>
+                        <span>
+                          {(Math.trunc(Number(i.netamt) * 10) / 10).toFixed(1)}
+                        </span>
                         {i.isNew || (!i.isNew && hasItemChanged(i._id)) ? (
                           <AiOutlineCheck
                             onClick={async (e) => {

@@ -203,7 +203,8 @@ const BillTable = ({
         // Calculate net amount based on the current values
         const quantity = Number(updatedItem.quantity || 0);
         const mrp = Number(updatedItem.mrp || 0);
-        updatedItem.netamt = quantity * mrp;
+        const toOneDecimalTrunc = (v) => Math.trunc(Number(v) * 10) / 10;
+        updatedItem.netamt = toOneDecimalTrunc(quantity * mrp);
 
         onUpdateItem(itemId, updatedItem);
       }
@@ -227,7 +228,8 @@ const BillTable = ({
           // Calculate net amount based on the current values
           const quantity = Number(nextItem.quantity || 0);
           const mrp = Number(nextItem.mrp || 0);
-          nextItem.netamt = quantity * mrp;
+          const toOneDecimalTrunc = (v) => Math.trunc(Number(v) * 10) / 10;
+          nextItem.netamt = toOneDecimalTrunc(quantity * mrp);
 
           return nextItem;
         })
@@ -309,7 +311,7 @@ const BillTable = ({
         product: item.product.trim(),
         quantity: quantity,
         mrp: mrp,
-        netamt: quantity * mrp,
+        netamt: Math.trunc(quantity * mrp * 10) / 10,
       };
 
       console.log("Payload to be sent:", payload);
@@ -745,28 +747,8 @@ const BillTable = ({
                             setEditingItemId(null);
                             setFocusedField(null);
                           }
-                          // For new items, only save if the item is complete (has product, quantity, and MRP)
-                          if (
-                            i.isNew &&
-                            i.product &&
-                            i.product.trim() !== "" &&
-                            i.quantity &&
-                            i.quantity > 0 &&
-                            i.mrp &&
-                            i.mrp > 0
-                          ) {
-                            saveItemById(i._id).then((result) => {
-                              if (result.success) {
-                                showToast(
-                                  "New item added successfully!",
-                                  "success"
-                                );
-                                // Only reset editing state after successful save
-                                setEditingItemId(null);
-                                setFocusedField(null);
-                              }
-                            });
-                          }
+                          // Do not auto-save on blur; save only on Enter as per flow
+                          // Do not auto-save on blur; save only on Enter as per flow
                         }}
                         onKeyDown={(e) => {
                           // Alt+WASD navigation for quantity field

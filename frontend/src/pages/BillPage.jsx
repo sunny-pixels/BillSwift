@@ -292,7 +292,7 @@ const BillPage = () => {
       product: item.product,
       quantity: item.quantity || 1,
       mrp: item.mrp || 0,
-      netamt: (item.quantity || 1) * (item.mrp || 0),
+      netamt: Math.trunc((item.quantity || 1) * (item.mrp || 0) * 10) / 10,
       isNew: true, // Mark as new item
     };
 
@@ -371,26 +371,24 @@ const BillPage = () => {
     setActiveTab(newTabId);
   };
 
-  // Update tab names with item counts
+  // Normalize tab names to remove any item counts
   const updateTabNames = () => {
     setTabs((prevTabs) =>
       prevTabs.map((tab, index) => {
         const isCustomName = !tab.name.match(/^Bill \d+/);
 
         if (isCustomName) {
-          const hasItemCount = tab.name.includes(`(${tab.items.length})`);
-          if (!hasItemCount && tab.items.length > 0) {
-            return { ...tab, name: `${tab.name} (${tab.items.length})` };
-          }
-          return tab;
+          // Remove any trailing counts like " (1)", "(2)", or plain " 3"
+          const baseName = tab.name
+            .replace(/(?:\s*\(\d+\)|\s+\d+)+$/, "")
+            .trim();
+          return { ...tab, name: baseName };
         } else {
           // For default tabs, number by index (1..N) so gaps are removed after deletions/reloads
           const sequentialNumber = index + 1;
           return {
             ...tab,
-            name: `Bill ${sequentialNumber}${
-              tab.items.length > 0 ? ` (${tab.items.length})` : ""
-            }`,
+            name: `Bill ${sequentialNumber}`,
           };
         }
       })

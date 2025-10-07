@@ -71,9 +71,14 @@ const SearchItemBill = ({
       const payload = {
         itemCode: `ITEM${Date.now().toString().slice(-6)}`,
         product: itemData.product,
-        quantity: 1, // Default inventory stock quantity
+        quantity: Number(itemData.quantity) || 1,
         mrp: parseFloat(itemData.mrp) || 0,
-        netamt: 1 * parseFloat(itemData.mrp) || 0, // inventory netamt = 1 * mrp
+        netamt:
+          Math.trunc(
+            (Number(itemData.quantity) || 1) *
+              (parseFloat(itemData.mrp) || 0) *
+              10
+          ) / 10,
       };
 
       console.log("🌐 Sending to backend:", payload);
@@ -248,6 +253,7 @@ const SearchItemBill = ({
 
       const itemToCreate = {
         product: finalData.product.trim(),
+        quantity: billQuantity, // persist entered qty to inventory
         mrp: mrp,
       };
 
@@ -264,7 +270,7 @@ const SearchItemBill = ({
         product: createdItem.product, // Use product from database response
         quantity: billQuantity, // Use the quantity the user entered for the bill
         mrp: mrp,
-        netamt: billQuantity * mrp, // Calculate based on bill quantity
+        netamt: Math.trunc(billQuantity * mrp * 10) / 10, // Calculate with 1-decimal truncation
         isNew: false, // Set to false since it's now saved in database
       };
 
@@ -319,7 +325,7 @@ const SearchItemBill = ({
         mrp: result.mrp || 0,
         itemCode:
           result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
-        netamt: 1 * (result.mrp || 0),
+        netamt: Math.trunc(1 * (result.mrp || 0) * 10) / 10,
       };
 
       console.log("SearchItemBill - Created item:", item);
@@ -386,7 +392,7 @@ const SearchItemBill = ({
               quantity: quantity,
               mrp: mrp,
               itemCode: "MANUAL-" + Date.now().toString().slice(-6),
-              netamt: quantity * mrp,
+              netamt: Math.trunc(quantity * mrp * 10) / 10,
             };
 
             console.log("SearchItemBill - Enter key - Created item:", item);

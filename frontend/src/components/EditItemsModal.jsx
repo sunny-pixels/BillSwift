@@ -47,7 +47,7 @@ const EditItemsModal = ({
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
-      const netamt = Number(quantity) * Number(mrp);
+      const netamt = Math.trunc(Number(quantity) * Number(mrp) * 10) / 10;
       const updatedItem = {
         _id: itemId,
         itemCode,

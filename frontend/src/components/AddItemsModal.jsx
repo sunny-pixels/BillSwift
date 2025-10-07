@@ -35,7 +35,7 @@ const AddItemsModal = ({
     try {
       setIsSubmitting(true);
 
-      const netamt = Number(quantity) * Number(mrp);
+      const netamt = Math.trunc(Number(quantity) * Number(mrp) * 10) / 10;
 
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/createItem`,
