@@ -285,7 +285,7 @@ const BillPage = () => {
   }, []);
 
   // Function to add items from search
-  const addItem = (item) => {
+  const addItem = async (item) => {
     console.log("addItem called with:", item);
     console.log("Current activeTab:", activeTab);
     console.log("Current tabs:", tabs);
@@ -303,28 +303,81 @@ const BillPage = () => {
       return;
     }
 
-    // Generate a temporary ID for new items
-    const newItem = {
-      _id: Date.now().toString(), // Temporary ID for newly added items
-      itemCode: item.itemCode || "N/A",
-      product: item.product,
-      quantity: item.quantity || 1,
-      mrp: item.mrp || 0,
-      netamt: Math.trunc((item.quantity || 1) * (item.mrp || 0) * 10) / 10,
-      isNew: true, // Mark as new item
-    };
+    try {
+      // Check if this is a new item that needs to be saved to database
+      if (item.isNew || !item._id || item._id.toString().length < 24) {
+        console.log("Saving new item to database:", item);
+        
+        // Prepare payload for database
+        const payload = {
+          itemCode: item.itemCode || `ITEM${Date.now()}`,
+          product: item.product.trim(),
+          quantity: Number(item.quantity) || 1,
+          mrp: Number(item.mrp) || 0,
+          netamt: Math.trunc((Number(item.quantity) || 1) * (Number(item.mrp) || 0) * 10) / 10,
+        };
 
-    console.log("New item to add:", newItem);
+        // Save item to database
+        const response = await axios.post('http://localhost:5001/createItem', payload);
+        console.log("Item saved to database:", response.data);
 
-    setTabs((prevTabs) => {
-      const updatedTabs = prevTabs.map((tab) =>
-        tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
-      );
-      console.log("Updated tabs:", updatedTabs);
-      return updatedTabs;
-    });
-    // Remember the last added item's id so Tab can jump to it
-    setLastAddedItemId(newItem._id);
+        // Create item object with database response
+        const savedItem = {
+          _id: response.data._id,
+          itemCode: response.data.itemCode,
+          product: response.data.product,
+          quantity: Number(item.quantity) || 1,
+          mrp: Number(item.mrp) || 0,
+          netamt: Math.trunc((Number(item.quantity) || 1) * (Number(item.mrp) || 0) * 10) / 10,
+          isNew: false, // Mark as saved item
+        };
+
+        console.log("Saved item to add to bill:", savedItem);
+
+        // Add saved item to bill
+      setTabs((prevTabs) => {
+        const updatedTabs = prevTabs.map((tab) =>
+            tab.id === activeTab ? { ...tab, items: [...tab.items, savedItem] } : tab
+        );
+        console.log("Updated tabs:", updatedTabs);
+        return updatedTabs;
+      });
+      
+      // Remember the last added item's id so Tab can jump to it
+        setLastAddedItemId(savedItem._id);
+      
+      toast.success("Item added and saved to database!");
+      } else {
+        // Item already exists in database, just add to bill
+        const existingItem = {
+          _id: item._id,
+          itemCode: item.itemCode || "N/A",
+          product: item.product,
+          quantity: item.quantity || 1,
+          mrp: item.mrp || 0,
+          netamt: Math.trunc((item.quantity || 1) * (item.mrp || 0) * 10) / 10,
+          isNew: false, // Existing item
+        };
+
+        console.log("Existing item to add:", existingItem);
+
+        setTabs((prevTabs) => {
+          const updatedTabs = prevTabs.map((tab) =>
+            tab.id === activeTab ? { ...tab, items: [...tab.items, existingItem] } : tab
+          );
+          console.log("Updated tabs:", updatedTabs);
+          return updatedTabs;
+        });
+
+        // Remember the last added item's id so Tab can jump to it
+        setLastAddedItemId(existingItem._id);
+        
+        toast.success("Item added to bill!");
+      }
+    } catch (error) {
+      console.error("Error saving item to database:", error);
+      toast.error("Failed to save item to database");
+    }
   };
 
   // Function to update items (for editing)
@@ -347,19 +400,19 @@ const BillPage = () => {
   const addEmptyRow = () => {
     const newItem = {
       _id: `temp_${Date.now()}`,
-      itemCode: `ITEM${items.length + 1}`,
-      product: "",
-      quantity: "",
-      mrp: "",
-      netamt: 0,
+        itemCode: `ITEM${items.length + 1}`,
+        product: "",
+        quantity: "",
+        mrp: "",
+        netamt: 0,
       isNew: true,
-    };
+      };
 
-    setTabs((prevTabs) =>
-      prevTabs.map((tab) =>
-        tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
-      )
-    );
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) =>
+          tab.id === activeTab ? { ...tab, items: [...tab.items, newItem] } : tab
+        )
+      );
   };
 
   // Function to rename tabs
@@ -741,6 +794,9 @@ const BillPage = () => {
     [activeTab, tabs]
   );
 
+  // When Tab is pressed from search, remember which row should loop back to search after its MRP
+  const [loopBackAfterRowId, setLoopBackAfterRowId] = useState(null);
+
   return (
     <div className={`flex p-6 ${isDarkMode ? "bg-[#141416]" : "bg-white"}`}>
       <SlideBar isDarkMode={isDarkMode} />
@@ -856,45 +912,33 @@ const BillPage = () => {
                   onItemSelect={addItem}
                   onCtrlEnterPrint={triggerPrintWithAnimation}
                   onTabToTable={() => {
-                    if (items.length === 0) {
-                      return;
-                    }
+                    // If there are no table items, nothing to focus
+                    if (items.length === 0) return;
 
-                    // Only focus on new items (items with isNew: true)
-                    const newItems = items.filter((item) => item.isNew);
-                    if (newItems.length === 0) {
-                      // No new items, stay in search bar
-                      return;
-                    }
-
-                    // Try to focus the most recently added item's first editable input (quantity)
+                    // Prefer focusing the last added item's quantity field if available
                     if (lastAddedItemId) {
                       const row = document.querySelector(
                         `tr[data-item-id="${lastAddedItemId}"]`
                       );
                       if (row) {
-                        const qtyInput = row.querySelector(
-                          'input[type="number"]'
-                        );
+                        const qtyInput = row.querySelector('input[type="number"]');
                         if (qtyInput) {
+                          // Ensure loop back to search after this row's MRP
+                          setLoopBackAfterRowId(lastAddedItemId);
                           qtyInput.focus();
                           return;
                         }
                       }
                     }
 
-                    // Fallback: Focus on the first new item's quantity field
-                    const firstNewItem = newItems[0];
-                    const firstNewItemRow = document.querySelector(
-                      `tr[data-item-id="${firstNewItem._id}"]`
-                    );
-                    if (firstNewItemRow) {
-                      const qtyInput = firstNewItemRow.querySelector(
-                        'input[type="number"]'
-                      );
-                      if (qtyInput) {
-                        qtyInput.focus();
-                      }
+                    // Otherwise, focus the first row's quantity field
+                    const firstRow = document.querySelector('tbody tr[data-item-id]');
+                    if (firstRow) {
+                      // Extract first row id to loop back after its MRP
+                      const firstRowId = firstRow.getAttribute('data-item-id');
+                      if (firstRowId) setLoopBackAfterRowId(firstRowId);
+                      const qtyInput = firstRow.querySelector('input[type="number"]');
+                      if (qtyInput) qtyInput.focus();
                     }
                   }}
                   name="Add Products"
@@ -924,6 +968,8 @@ const BillPage = () => {
                 items={items}
                 setItems={setItems}
                 onUpdateItem={updateItem}
+                loopBackAfterRowId={loopBackAfterRowId}
+                onConsumeLoopBack={() => setLoopBackAfterRowId(null)}
                 isProductEditable={false}
                 className={`w-full border-collapse [&_td]:border-2 [&_th]:border-2 ${
                   isDarkMode
@@ -953,8 +999,8 @@ const BillPage = () => {
                 onLastCellTab={() => {
                   console.log("onLastCellTab called - focusing search bar");
                   // Focus the search bar when tabbing from the last cell (MRP field)
-                  const searchInput = document.querySelector(
-                    'input[placeholder="Add Products"]'
+                  const searchInput = document.getElementById(
+                    "global-search-input"
                   );
                   if (searchInput) {
                     console.log("Found search input, focusing it");
