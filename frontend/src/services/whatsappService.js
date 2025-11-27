@@ -1,13 +1,16 @@
 // WhatsApp service that communicates with our WhatsApp server
-const WHATSAPP_SERVER_URL =
-  (typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    (import.meta.env.VITE_WHATSAPP_SERVER_URL ||
-      import.meta.env.VITE_API_BASE_URL)) ||
-  (typeof process !== "undefined" &&
-    process.env &&
-    (process.env.VITE_WHATSAPP_SERVER_URL || process.env.VITE_API_BASE_URL)) ||
-  "http://localhost:5002";
+// const WHATSAPP_SERVER_URL =
+//   (typeof import.meta !== "undefined" &&
+//     import.meta.env &&
+//     (import.meta.env.VITE_WHATSAPP_SERVER_URL ||
+//       import.meta.env.VITE_API_BASE_URL)) ||
+//   (typeof process !== "undefined" &&
+//     process.env &&
+//     (process.env.VITE_WHATSAPP_SERVER_URL || process.env.VITE_API_BASE_URL)) ||
+//   "http://localhost:5002";
+
+// Use your actual WhatsApp server URL/port here
+const WHATSAPP_SERVER_URL = "http://localhost:5002";
 
 // Function to check WhatsApp connection status and get QR code if needed
 const checkWhatsAppStatus = async () => {

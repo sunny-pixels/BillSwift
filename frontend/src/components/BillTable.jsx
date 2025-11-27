@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { AiOutlineClose } from "react-icons/ai";
 import { AiOutlineCheck } from "react-icons/ai";
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const BillTable = ({
   items,
@@ -92,10 +92,10 @@ const BillTable = ({
   }, [highlightedItemId]);
 
   // Debug logging for items
-  useEffect(() => {
-    console.log("BillTable - Received items:", items);
-    console.log("BillTable - Items length:", items?.length || 0);
-  }, [items]);
+  // useEffect(() => {
+  //   console.log("BillTable - Received items:", items);
+  //   console.log("BillTable - Items length:", items?.length || 0);
+  // }, [items]);
 
   // Auto-scroll to new items when they're added
   useEffect(() => {
@@ -125,20 +125,20 @@ const BillTable = ({
 
     // Fallback to internal delete logic
     try {
-      console.log("Attempting to delete item:", itemId);
+      // console.log("Attempting to delete item:", itemId);
 
       // Find the item to check its status
       const itemToDelete = items.find((item) => item._id === itemId);
       if (!itemToDelete) {
-        console.log("Item not found for deletion:", itemId);
+        // console.log("Item not found for deletion:", itemId);
         return;
       }
 
-      console.log("Deleting item:", {
-        id: itemToDelete._id,
-        product: itemToDelete.product,
-        isNew: itemToDelete.isNew,
-      });
+      // console.log("Deleting item:", {
+      //   id: itemToDelete._id,
+      //   product: itemToDelete.product,
+      //   isNew: itemToDelete.isNew,
+      // });
 
       // First remove from local state immediately for better UX
       if (onUpdateItem) {
@@ -156,13 +156,13 @@ const BillTable = ({
 
       // If it's a new item (not yet saved to backend), just remove from local state
       if (itemToDelete.isNew) {
-        console.log("New item deleted from local state only");
+        // console.log("New item deleted from local state only");
         return;
       }
 
       // If it's an existing item, delete from backend
       const response = await axios.delete(`${API_URL}/deleteItem/${itemId}`);
-      console.log("Delete response:", response);
+      // console.log("Delete response:", response);
     } catch (err) {
       console.error("Failed to delete item:", err);
       // Show error message if deletion fails
@@ -238,16 +238,16 @@ const BillTable = ({
   };
 
   // Persist the item to backend (called on blur/Enter)
-  const saveItemById = async (itemId) => {
+  const saveItemById = async (itemId, forceSave = false) => {
     try {
-      console.log("saveItemById called with itemId:", itemId);
-      console.log("API_URL:", API_URL);
+      // console.log("saveItemById called with itemId:", itemId);
+      // console.log("API_URL:", API_URL);
       const item = items.find((x) => x._id === itemId);
       if (!item) {
-        console.log("Item not found:", itemId);
+        // console.log("Item not found:", itemId);
         return Promise.resolve({ success: false });
       }
-      console.log("Found item:", item);
+      // console.log("Found item:", item);
 
       // Check if the item is empty (no product name)
       if (!item.product || item.product.trim() === "") {
@@ -278,9 +278,9 @@ const BillTable = ({
           return Promise.resolve({ success: false });
         }
       } else {
-        // For existing items, check if anything has actually changed
-        if (!hasItemChanged(itemId)) {
-          console.log("No changes detected for existing item, skipping save");
+        // For existing items, check if anything has actually changed (unless forced)
+        if (!forceSave && !hasItemChanged(itemId)) {
+          // console.log("No changes detected for existing item, skipping save");
           return Promise.resolve({ success: false });
         }
       }
@@ -289,19 +289,19 @@ const BillTable = ({
       const quantity = Number(item.quantity || 0);
       const mrp = Number(item.mrp || 0);
 
-      console.log(
-        "Converted values - quantity:",
-        quantity,
-        "mrp:",
-        mrp,
-        "isNaN quantity:",
-        isNaN(quantity),
-        "isNaN mrp:",
-        isNaN(mrp)
-      );
+      // console.log(
+      //   "Converted values - quantity:",
+      //   quantity,
+      //   "mrp:",
+      //   mrp,
+      //   "isNaN quantity:",
+      //   isNaN(quantity),
+      //   "isNaN mrp:",
+      //   isNaN(mrp)
+      // );
 
       if (isNaN(quantity) || isNaN(mrp)) {
-        console.log("Invalid numbers detected");
+        // console.log("Invalid numbers detected");
         // Don't save if values are invalid, just update local state
         return Promise.resolve({ success: false });
       }
@@ -314,14 +314,14 @@ const BillTable = ({
         netamt: Math.trunc(quantity * mrp * 10) / 10,
       };
 
-      console.log("Payload to be sent:", payload);
+      // console.log("Payload to be sent:", payload);
 
       // Check if this is a new item or existing item
       if (item.isNew) {
         // Create new item
         try {
           const response = await axios.post(`${API_URL}/createItem`, payload);
-          console.log("New item created:", response.data);
+          // console.log("New item created:", response.data);
 
           // Update local state with the new item data from server
           const newItem = {
@@ -347,7 +347,7 @@ const BillTable = ({
 
           return Promise.resolve({ success: true });
         } catch (err) {
-          console.log("Failed to create new item:", err);
+          // console.log("Failed to create new item:", err);
           // Don't remove the row on creation failure, let user retry
           return Promise.resolve({ success: false });
         }
@@ -387,13 +387,13 @@ const BillTable = ({
 
           return Promise.resolve({ success: true });
         } catch (err) {
-          console.log("Failed to update item:", err);
+          // console.log("Failed to update item:", err);
           // Don't remove the row on update failure, let user retry
           return Promise.resolve({ success: false });
         }
       }
     } catch (err) {
-      console.log("Unexpected error:", err);
+      // console.log("Unexpected error:", err);
       // Don't remove the row on unexpected errors
       return Promise.resolve({ success: false });
     }
@@ -547,7 +547,7 @@ const BillTable = ({
                               i.mrp &&
                               i.mrp > 0
                             ) {
-                              saveItemById(i._id).then((result) => {
+                              saveItemById(i._id, true).then((result) => {
                                 if (result.success) {
                                   showToast(
                                     "New item added successfully!",
@@ -652,14 +652,12 @@ const BillTable = ({
                                 // Normal Enter: Save and move to quantity field
                                 e.preventDefault();
 
-                                // Only save if there are actual changes for existing items
-                                if (i.isNew || hasItemChanged(i._id)) {
-                                  saveItemById(i._id).then((result) => {
-                                    if (result.success) {
-                                      showToast("Value updated", "success");
-                                    }
-                                  });
-                                }
+                                // Force-save on Enter so confirmed items always update
+                                saveItemById(i._id, true).then((result) => {
+                                  if (result.success) {
+                                    showToast("Value updated", "success");
+                                  }
+                                });
 
                                 const quantityInput = document.querySelector(
                                   `input[tabindex="${quantityTabIndex}"]`
@@ -741,14 +739,19 @@ const BillTable = ({
                           }
                         }}
                         onBlur={() => {
-                          // Don't immediately reset editing state for new items
-                          // Only reset if it's not a new item or if we're moving to another field
+                          // Only reset if it's not a new item
                           if (!i.isNew) {
                             setEditingItemId(null);
                             setFocusedField(null);
+                            // Auto-save edits to confirmed items on blur
+                            if (hasItemChanged(i._id)) {
+                              saveItemById(i._id, true).then((result) => {
+                                if (result.success) {
+                                  showToast("Value updated", "success");
+                                }
+                              });
+                            }
                           }
-                          // Do not auto-save on blur; save only on Enter as per flow
-                          // Do not auto-save on blur; save only on Enter as per flow
                         }}
                         onKeyDown={(e) => {
                           // Alt+WASD navigation for quantity field
@@ -871,14 +874,22 @@ const BillTable = ({
                               // Normal Enter: Save and move to next field
                               e.preventDefault();
 
-                              // Only save if there are actual changes for existing items
-                              if (i.isNew || hasItemChanged(i._id)) {
-                                saveItemById(i._id).then((result) => {
-                                  if (result.success) {
-                                    showToast("Value updated", "success");
-                                  }
-                                });
+                              // Optimistically mark as saved to clear tick, then force-save
+                              if (!i.isNew) {
+                                setOriginalValues((prev) => ({
+                                  ...prev,
+                                  [i._id]: {
+                                    product: i.product || "",
+                                    quantity: i.quantity || 0,
+                                    mrp: i.mrp || 0,
+                                  },
+                                }));
                               }
+                              saveItemById(i._id, true).then((result) => {
+                                if (result.success) {
+                                  showToast("Value updated", "success");
+                                }
+                              });
 
                               // Small delay to prevent focus loss
                               setTimeout(() => {
@@ -985,14 +996,19 @@ const BillTable = ({
                           }
                         }}
                         onBlur={() => {
-                          // Don't immediately reset editing state for new items
-                          // Only reset if it's not a new item or if we're moving to another field
+                          // Only reset if it's not a new item
                           if (!i.isNew) {
                             setEditingItemId(null);
                             setFocusedField(null);
+                            // Auto-save edits to confirmed items on blur
+                            if (hasItemChanged(i._id)) {
+                              saveItemById(i._id, true).then((result) => {
+                                if (result.success) {
+                                  showToast("Value updated", "success");
+                                }
+                              });
+                            }
                           }
-                          // Note: Removed automatic save on blur for MRP field
-                          // Items should only be saved on Enter key press, not on Tab/blur
                         }}
                         onKeyDown={(e) => {
                           // Alt+WASD navigation for mrp field
@@ -1123,46 +1139,56 @@ const BillTable = ({
                                 return;
                               }
 
-                              // Only save if there are actual changes for existing items
-                              if (i.isNew || hasItemChanged(i._id)) {
-                                saveItemById(i._id).then((result) => {
-                                  if (result.success) {
-                                    if (i.isNew) {
-                                      showToast(
-                                        "New item added successfully!",
-                                        "success"
-                                      );
-                                    } else {
-                                      showToast("Value updated", "success");
-                                    }
+                              // Optimistically mark as saved to clear tick, then force-save
+                              if (!i.isNew) {
+                                setOriginalValues((prev) => ({
+                                  ...prev,
+                                  [i._id]: {
+                                    product: i.product || "",
+                                    quantity: i.quantity || 0,
+                                    mrp: i.mrp || 0,
+                                  },
+                                }));
+                              }
+                              saveItemById(i._id, true).then((result) => {
+                                if (result.success) {
+                                  if (i.isNew) {
+                                    showToast(
+                                      "New item added successfully!",
+                                      "success"
+                                    );
+                                  } else {
+                                    showToast("Value updated", "success");
+                                  }
 
-                                    if (index === items.length - 1) {
-                                      // Last row: Move to Add Item button
-                                      if (onLastCellTab) {
-                                        onLastCellTab();
-                                      }
-                                    } else {
-                                      // Not last row: Move to next row's first input field
-                                      const nextRowFirstInput =
-                                        document.querySelector(
-                                          `input[tabindex="${
-                                            2 +
-                                            (index + 1) *
-                                              (isProductEditable ? 3 : 2)
-                                          }"]`
-                                        );
-                                      if (nextRowFirstInput) {
-                                        nextRowFirstInput.focus();
-                                        // Scroll to ensure the next row is visible
-                                        nextRowFirstInput.scrollIntoView({
-                                          behavior: "smooth",
-                                          block: "center",
-                                        });
-                                      }
+                                  if (index === items.length - 1) {
+                                    // Last row: Move to Add Item button
+                                    if (onLastCellTab) {
+                                      onLastCellTab();
+                                    }
+                                  } else {
+                                    // Not last row: Move to next row's first input field
+                                    const nextRowFirstInput =
+                                      document.querySelector(
+                                        `input[tabindex="${
+                                          2 +
+                                          (index + 1) *
+                                            (isProductEditable ? 3 : 2)
+                                        }"]`
+                                      );
+                                    if (nextRowFirstInput) {
+                                      nextRowFirstInput.focus();
+                                      // Scroll to ensure the next row is visible
+                                      nextRowFirstInput.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "center",
+                                      });
                                     }
                                   }
-                                });
-                              } else {
+                                }
+                              });
+                              // No changes branch removed; we always attempt save on Enter
+                              if (false) {
                                 // No changes, just move to next field
                                 if (index === items.length - 1) {
                                   // Last row: Move to Add Item button
@@ -1253,7 +1279,7 @@ const BillTable = ({
                                 "Save button clicked for item:",
                                 i._id
                               );
-                              const result = await saveItemById(i._id);
+                              const result = await saveItemById(i._id, true);
                               if (result.success) {
                                 if (i.isNew) {
                                   showToast(
