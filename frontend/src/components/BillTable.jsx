@@ -15,6 +15,8 @@ const BillTable = ({
   highlightClassName,
   iconClassName,
   cellClassName,
+  loopBackAfterRowId, // If set, Tab from this row's MRP returns to search
+  onConsumeLoopBack, // Clear the loop-back flag once consumed
   onLastCellTab, // Callback when Tab is pressed on the last cell
   onUpdateItem, // Callback for updating items
   onDeleteClick, // Callback for deleting items
@@ -455,31 +457,17 @@ const BillTable = ({
                   (i.itemCode === highlightedItemId ||
                     i._id === highlightedItemId);
 
-                // Calculate tabIndex for each input field - only for new items in bill table
+                // Calculate tabIndex for each input field across ALL rows
                 // Each row has 2-3 focusable elements: product (if editable), quantity, mrp
                 const focusableFieldsPerRow = isProductEditable ? 3 : 2;
-                const newItemIndex = items
-                  .slice(0, index)
-                  .filter((item) => item.isNew).length;
-                const baseTabIndex = i.isNew
-                  ? 2 + newItemIndex * focusableFieldsPerRow
-                  : -1;
-                const productTabIndex =
-                  isProductEditable && i.isNew
-                    ? baseTabIndex
-                    : i.isNew
-                    ? -1
-                    : null;
-                const quantityTabIndex = i.isNew
-                  ? isProductEditable
+                const baseTabIndex = 2 + index * focusableFieldsPerRow;
+                const productTabIndex = isProductEditable ? baseTabIndex : null;
+                const quantityTabIndex = isProductEditable
                     ? baseTabIndex + 1
-                    : baseTabIndex
-                  : -1;
-                const mrpTabIndex = i.isNew
-                  ? isProductEditable
+                  : baseTabIndex;
+                const mrpTabIndex = isProductEditable
                     ? baseTabIndex + 2
-                    : baseTabIndex + 1
-                  : -1;
+                  : baseTabIndex + 1;
 
                 return (
                   <tr
@@ -955,6 +943,11 @@ const BillTable = ({
                         }}
                         placeholder="Qty"
                         tabIndex={quantityTabIndex}
+                        onKeyDown={(e) => {
+                          // When tabbing backward from qty at first row, let browser handle
+                          if (e.key === "Tab" && e.shiftKey && index === 0) return;
+                          // Default Tab will move to MRP (next tabbable element)
+                        }}
                       />
                     </td>
 
@@ -1011,6 +1004,25 @@ const BillTable = ({
                           }
                         }}
                         onKeyDown={(e) => {
+                          // If this row is marked for loop-back, Tab from MRP goes to search
+                          if (e.key === "Tab" && !e.shiftKey && loopBackAfterRowId === i._id) {
+                            e.preventDefault();
+                            if (typeof onLastCellTab === "function") onLastCellTab();
+                            if (typeof onConsumeLoopBack === "function") onConsumeLoopBack();
+                            return;
+                          }
+
+                          // Handle Tab from last cell to loop back to search
+                          if (e.key === "Tab" && !e.shiftKey) {
+                            if (index === items.length - 1) {
+                              if (onLastCellTab) {
+                                e.preventDefault();
+                                onLastCellTab();
+                                return;
+                              }
+                            }
+                          }
+
                           // Alt+WASD navigation for mrp field
                           if (e.altKey) {
                             const step = isProductEditable ? 3 : 2;

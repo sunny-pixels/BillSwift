@@ -318,6 +318,7 @@ const SearchItemBill = ({
 
       // Create item object
       const item = {
+        _id: result._id, // Include the database ID if it exists
         product: result.product,
         // Always start with quantity 1 on Bill page when selected from search
         quantity: 1,
@@ -326,6 +327,7 @@ const SearchItemBill = ({
         itemCode:
           result.itemCode || "MANUAL-" + Date.now().toString().slice(-6),
         netamt: Math.trunc(1 * (result.mrp || 0) * 10) / 10,
+        isNew: false, // Items from search are existing items
       };
 
       console.log("SearchItemBill - Created item:", item);
