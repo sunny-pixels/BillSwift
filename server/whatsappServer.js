@@ -52,11 +52,16 @@ const initializeWhatsApp = async (forceNew = false) => {
 
     sock = makeWASocket({
       auth: state,
-      printQRInTerminal: true,
-      connectTimeoutMs: 10000, // 10 seconds
-      qrTimeout: 40000, // 40 seconds
-      defaultQueryTimeoutMs: 20000, // 20 seconds
-      keepAliveIntervalMs: 15000, // 15 seconds
+      printQRInTerminal: false,
+      browser: ["BillSwift", "Chrome", "1.0.0"],
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 0,
+      keepAliveIntervalMs: 10000,
+      emitOwnEvents: false,
+      fireInitQueries: true,
+      generateHighQualityLinkPreview: true,
+      syncFullHistory: false,
+      markOnlineOnConnect: true,
     });
 
     sock.ev.on("connection.update", async (update) => {
@@ -67,6 +72,7 @@ const initializeWhatsApp = async (forceNew = false) => {
         qrCode = qr;
         qrcode.generate(qr, { small: true });
         console.log("New QR code generated. Please scan with WhatsApp.");
+        console.log("QR Code:", qr);
         // Print the endpoint URL
         const endpoint = `/api/whatsapp/qr`;
         if (process.env.HOST && process.env.PORT) {
