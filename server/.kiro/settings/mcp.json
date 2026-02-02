@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "render": {
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer rnd_n1z4w1VDiHN7ITaAZjoleJdj31Go"
+      },
+      "autoApprove": [
+        "list_services",
+        "list_deploys"
+      ]
+    }
+  }
+}
