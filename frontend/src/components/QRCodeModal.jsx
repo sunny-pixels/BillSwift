@@ -209,8 +209,8 @@ const QRCodeModal = ({
               isDarkMode ? "text-[#9aa0ae]" : "text-[#767c8f]"
             }`}
           >
-            Server: {WHATSAPP_SERVER_URL}
-            {qrEndpoint ? ` (${qrEndpoint})` : ""}
+            {/* Server: {WHATSAPP_SERVER_URL} */}
+            {/* {qrEndpoint ? ` (${qrEndpoint})` : ""} */}
           </div>
           <div className="flex items-center gap-3">
             <button
