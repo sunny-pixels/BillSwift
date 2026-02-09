@@ -5,6 +5,7 @@ import Item from "./models/item.model.js";
 import mongoose from "mongoose";
 import { connectDB } from "./lib/db.js";
 import billsRouter from "./routes/bills.route.js";
+import { initializeWhatsApp } from "./utils/whatsapp.js";
 
 dotenv.config();
 
@@ -20,9 +21,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 5001;
 
 connectDB();
+
+// Initialize WhatsApp connection
+initializeWhatsApp().catch(err => {
+  console.error('Failed to initialize WhatsApp:', err);
+});
 
 app.get("/", (req, res) => {
   Item.find({})
