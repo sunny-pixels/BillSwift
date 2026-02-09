@@ -554,13 +554,27 @@ const SearchItemBill = ({
                 onClick={startNewItemCreation}
                 role="button"
                 tabIndex={0}
-                className={`p-3 cursor-pointer border-l-4 border-[#3379E9] ${
+                className={`p-4 cursor-pointer rounded-[12px] m-2 ${
                   isDarkMode
-                    ? "text-[#3379E9] hover:bg-[#343438] font-medium text-[13px] focus:outline-none transition-colors duration-150"
-                    : "text-[#3379E9] hover:bg-[#f4f4f6] font-medium text-[13px] focus:outline-none transition-colors duration-150"
-                }`}
+                    ? "bg-[#3379E9]/10 hover:bg-[#3379E9]/20 text-[#3379E9] border border-[#3379E9]/30"
+                    : "bg-[#3379E9]/10 hover:bg-[#3379E9]/20 text-[#3379E9] border border-[#3379E9]/30"
+                } font-medium text-sm focus:outline-none transition-all duration-200 flex items-center gap-2`}
               >
-                + Add New Item: "{input}"
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span>Add New Item: <span className="font-bold">"{input}"</span></span>
               </div>
             )}
           </div>
@@ -569,34 +583,36 @@ const SearchItemBill = ({
       {/* New Item Creation Indicator */}
       {isCreatingNew && (
         <div
-          className={`absolute top-[60px] w-full rounded-[24px] p-4 shadow-lg z-50 border ${
+          className={`absolute top-[60px] w-full rounded-[24px] p-5 shadow-xl z-50 border-2 ${
             isDarkMode
-              ? "bg-[#2a2a2d] border-[#3379E9]/30"
-              : "bg-white border-[#3379E9]/30"
+              ? "bg-[#1A1A1C] border-[#3379E9]"
+              : "bg-white border-[#3379E9]"
           }`}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-[#3379E9] rounded-full"></div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 bg-[#3379E9] rounded-full animate-pulse"></div>
             <span
-              className={`text-sm font-medium ${
-                isDarkMode ? "text-[#3379E9]" : "text-[#3379E9]"
+              className={`text-base font-bold ${
+                isDarkMode ? "text-white" : "text-[#141416]"
               }`}
             >
               Creating New Item
             </span>
           </div>
-          <div className="flex items-center gap-2 text-xs mb-2">
-            <span className="bg-green-500 text-white px-2 py-1 rounded">
+          <div className="flex items-center gap-2 mb-3">
+            <span className={`px-3 py-1.5 rounded-[8px] text-xs font-medium ${
+              isDarkMode ? "bg-[#3379E9] text-white" : "bg-[#3379E9] text-white"
+            }`}>
               Name: {newItemData.product}
             </span>
             <span
-              className={`px-2 py-1 rounded ${
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium ${
                 newItemStep === 1
                   ? "bg-[#3379E9] text-white"
                   : newItemData.quantity && newItemStep > 1
-                  ? "bg-green-500 text-white"
+                  ? isDarkMode ? "bg-[#2a2a2d] text-white border border-[#3379E9]" : "bg-[#f4f4f6] text-[#141416] border border-[#3379E9]"
                   : isDarkMode
-                  ? "bg-[#343438] text-[#767c8f]"
+                  ? "bg-[#2a2a2d] text-[#767c8f]"
                   : "bg-[#f4f4f6] text-[#767c8f]"
               }`}
             >
@@ -606,13 +622,13 @@ const SearchItemBill = ({
                 : ""}
             </span>
             <span
-              className={`px-2 py-1 rounded ${
+              className={`px-3 py-1.5 rounded-[8px] text-xs font-medium ${
                 newItemStep === 2
                   ? "bg-[#3379E9] text-white"
                   : newItemData.mrp && newItemStep > 2
-                  ? "bg-green-500 text-white"
+                  ? isDarkMode ? "bg-[#2a2a2d] text-white border border-[#3379E9]" : "bg-[#f4f4f6] text-[#141416] border border-[#3379E9]"
                   : isDarkMode
-                  ? "bg-[#343438] text-[#767c8f]"
+                  ? "bg-[#2a2a2d] text-[#767c8f]"
                   : "bg-[#f4f4f6] text-[#767c8f]"
               }`}
             >
@@ -627,7 +643,7 @@ const SearchItemBill = ({
               isDarkMode ? "text-[#767c8f]" : "text-[#767c8f]"
             }`}
           >
-            Press Tab to continue, Enter to finish, Esc to cancel
+            Press <kbd className="px-1.5 py-0.5 rounded bg-[#3379E9]/20 text-[#3379E9] font-mono">Tab</kbd> to continue, <kbd className="px-1.5 py-0.5 rounded bg-[#3379E9]/20 text-[#3379E9] font-mono">Enter</kbd> to finish, <kbd className="px-1.5 py-0.5 rounded bg-[#3379E9]/20 text-[#3379E9] font-mono">Esc</kbd> to cancel
           </div>
         </div>
       )}

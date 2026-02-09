@@ -943,11 +943,6 @@ const BillTable = ({
                         }}
                         placeholder="Qty"
                         tabIndex={quantityTabIndex}
-                        onKeyDown={(e) => {
-                          // When tabbing backward from qty at first row, let browser handle
-                          if (e.key === "Tab" && e.shiftKey && index === 0) return;
-                          // Default Tab will move to MRP (next tabbable element)
-                        }}
                       />
                     </td>
 
