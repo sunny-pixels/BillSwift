@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { AiOutlineClose } from "react-icons/ai";
 import { AiOutlineCheck } from "react-icons/ai";
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_API_URL || "https://bill-swift.onrender.com";
 
 const BillTable = ({
   items,

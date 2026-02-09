@@ -61,9 +61,9 @@ const SearchItemBill = ({
     }
   }, [selectedItem]);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || "https://bill-swift.onrender.com";
   const BACKEND_BASE_URL =
-    import.meta.env.VITE_BACKEND_BASE_URL || "http://localhost:5001";
+    import.meta.env.VITE_BACKEND_BASE_URL || import.meta.env.VITE_API_URL || "https://bill-swift.onrender.com";
 
   // Function to create new item in database
   const createNewItem = async (itemData) => {

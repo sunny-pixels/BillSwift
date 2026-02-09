@@ -318,7 +318,8 @@ const BillPage = () => {
         };
 
         // Save item to database
-        const response = await axios.post('http://localhost:5001/createItem', payload);
+        const API_URL = import.meta.env.VITE_API_URL || 'https://bill-swift.onrender.com';
+        const response = await axios.post(`${API_URL}/createItem`, payload);
         console.log("Item saved to database:", response.data);
 
         // Create item object with database response
@@ -710,7 +711,8 @@ const BillPage = () => {
         };
 
         try {
-          await axios.post("http://localhost:5001/bills", payload);
+          const API_URL = import.meta.env.VITE_API_URL || 'https://bill-swift.onrender.com';
+          await axios.post(`${API_URL}/bills`, payload);
           toast.success("Bill saved to database");
         } catch (err) {
           console.error("Error saving bill:", err);
@@ -773,8 +775,9 @@ const BillPage = () => {
       }
 
       // If it's an existing item from database, delete from backend
+      const API_URL = import.meta.env.VITE_API_URL || 'https://bill-swift.onrender.com';
       axios
-        .delete(`http://localhost:5001/deleteItem/${itemId}`)
+        .delete(`${API_URL}/deleteItem/${itemId}`)
         .then(() => {
           toast.success("Item deleted successfully");
         })
