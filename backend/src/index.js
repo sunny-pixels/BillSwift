@@ -6,14 +6,21 @@ import mongoose from "mongoose";
 import { connectDB } from "./lib/db.js";
 import billsRouter from "./routes/bills.route.js";
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
 dotenv.config();
 
-const PORT = process.env.PORT;
+const app = express();
+
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [process.env.FRONTEND_URL || 'https://bill-swift-omega.vercel.app'] 
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://bill-swift-omega.vercel.app'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+app.use(express.json());
+
+const PORT = process.env.PORT || 5001;
 
 connectDB();
 
