@@ -1075,8 +1075,8 @@ const BillPage = () => {
                       .toLocaleString()}
                   </div>
                 </div>
-                <div className="relative w-full h-10 bg-white/10 rounded-full overflow-hidden">
-                  <div className="absolute left-0 top-0 h-full flex items-center pl-4">
+                <div className="relative w-full h-10 bg-white/10 rounded-full">
+                  <div className="absolute left-0 top-0 h-full flex items-center pl-4 pointer-events-none">
                     <span className="text-white/50 text-sm ml-8">Print</span>
                   </div>
                   <button
@@ -1095,7 +1095,7 @@ const BillPage = () => {
                         }
                       }
                     }}
-                    className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 focus:bg-white/40 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform hover:scale-105 focus:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] focus:shadow-[0_0_30px_rgba(255,255,255,0.8)]"
+                    className="absolute left-0 top-0 flex items-center justify-center bg-white/20 hover:bg-white/30 focus:bg-white/40 transition-all duration-500 ease-in-out rounded-full w-10 h-10 transform hover:scale-105 focus:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:drop-shadow-[0_0_20px_rgba(255,255,255,0.6)] focus:shadow-[0_0_30px_rgba(255,255,255,0.8)] z-10"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
