@@ -3,6 +3,7 @@ const {
   default: makeWASocket,
   DisconnectReason,
   useMultiFileAuthState,
+  fetchLatestWaWebVersion,
 } = require("@whiskeysockets/baileys");
 const { Boom } = require("@hapi/boom");
 const cors = require("cors");
@@ -19,6 +20,7 @@ let sock = null;
 let isConnected = false;
 let qrCode = null;
 let reconnectAttempts = 0;
+let isInitializing = false;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
 const SESSIONS_DIR = path.join(__dirname, "sessions");
@@ -69,9 +71,43 @@ const clearSession = async () => {
   reconnectAttempts = 0;
 };
 
+// Gracefully close existing socket before creating a new one
+const closeExistingSocket = () => {
+  if (sock) {
+    try {
+      sock.ev.removeAllListeners();
+      sock.end(undefined);
+    } catch (e) {
+      // ignore
+    }
+    sock = null;
+  }
+};
+
+// Check if valid credentials exist on disk
+const hasCredentials = () => {
+  const credsPath = path.join(SESSIONS_DIR, "creds.json");
+  if (!fs.existsSync(credsPath)) return false;
+  try {
+    const creds = JSON.parse(fs.readFileSync(credsPath, "utf-8"));
+    // If me is set, the device was previously paired
+    return !!creds.me;
+  } catch {
+    return false;
+  }
+};
+
 // Initialize WhatsApp connection
 const initializeWhatsApp = async (forceNew = false) => {
+  if (isInitializing) {
+    console.log("Already initializing, skipping duplicate call.");
+    return;
+  }
+  isInitializing = true;
+
   try {
+    closeExistingSocket();
+
     if (forceNew) {
       await clearSession();
     }
@@ -93,19 +129,35 @@ const initializeWhatsApp = async (forceNew = false) => {
       }
     };
 
-    sock = makeWASocket({
+    // Fetch the latest WhatsApp Web version to avoid protocol mismatch (405 errors)
+    let version;
+    try {
+      const versionInfo = await fetchLatestWaWebVersion({});
+      version = versionInfo.version;
+      console.log("Using WA Web version:", version);
+    } catch (e) {
+      console.warn("Failed to fetch WA Web version, using default:", e.message);
+    }
+
+    const socketConfig = {
       auth: state,
       printQRInTerminal: false,
       browser: ["BillSwift", "Chrome", "1.0.0"],
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 0,
-      keepAliveIntervalMs: 10000,
+      keepAliveIntervalMs: 25000,
       emitOwnEvents: false,
       fireInitQueries: true,
       generateHighQualityLinkPreview: true,
       syncFullHistory: false,
       markOnlineOnConnect: true,
-    });
+      retryRequestDelayMs: 500,
+    };
+    if (version) {
+      socketConfig.version = version;
+    }
+
+    sock = makeWASocket(socketConfig);
 
     sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -173,12 +225,21 @@ const initializeWhatsApp = async (forceNew = false) => {
         await initializeWhatsApp();
       }, 5000);
     }
+  } finally {
+    isInitializing = false;
   }
 };
 
 // Initialize WhatsApp on server start — restore creds from env if available
 restoreCredsFromEnv();
-initializeWhatsApp();
+
+// Only auto-connect if we have existing credentials; otherwise wait for user to trigger via /api/whatsapp/qr
+if (hasCredentials()) {
+  console.log("Existing credentials found, auto-connecting...");
+  initializeWhatsApp();
+} else {
+  console.log("No existing WhatsApp credentials. Visit /api/whatsapp/qr to start pairing.");
+}
 
 // API endpoint to get QR code
 app.get("/api/whatsapp/qr", (req, res) => {
@@ -192,6 +253,11 @@ app.get("/api/whatsapp/qr", (req, res) => {
   } else if (isConnected) {
     res.json({ status: "connected", endpoint: endpointUrl });
   } else {
+    // If not connected and not initializing, start the connection process
+    if (!sock && !isInitializing) {
+      console.log("QR requested — starting WhatsApp connection...");
+      initializeWhatsApp();
+    }
     res.json({ status: "waiting", endpoint: endpointUrl });
   }
 });
