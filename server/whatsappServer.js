@@ -85,23 +85,31 @@ const initializeWhatsApp = async (forceNew = false) => {
       }
 
       if (connection === "close") {
-        const statusCode = (lastDisconnect?.error instanceof Boom)?.output
-          ?.statusCode;
+        const statusCode =
+          lastDisconnect?.error instanceof Boom
+            ? lastDisconnect.error.output?.statusCode
+            : lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
         console.log("Connection closed. Status code:", statusCode);
         isConnected = false;
 
-        if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        if (!shouldReconnect) {
+          console.log("Logged out. Clearing session...");
+          await clearSession();
+        } else if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           reconnectAttempts++;
-          console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+          const delay = Math.min(5000 * reconnectAttempts, 30000);
+          console.log(`Reconnecting... Attempt ${reconnectAttempts} (in ${delay / 1000}s)`);
           setTimeout(async () => {
             await initializeWhatsApp();
-          }, 5000); // Wait 5 seconds before reconnecting
-        } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.log("Max reconnection attempts reached. Clearing session...");
-          await clearSession();
-          await initializeWhatsApp(true);
+          }, delay);
+        } else {
+          console.log("Max reconnection attempts reached. Will retry after a longer delay...");
+          reconnectAttempts = 0;
+          setTimeout(async () => {
+            await initializeWhatsApp();
+          }, 60000); // Wait 60 seconds before trying again
         }
       } else if (connection === "open") {
         isConnected = true;
@@ -125,7 +133,7 @@ const initializeWhatsApp = async (forceNew = false) => {
 };
 
 // Initialize WhatsApp on server start
-initializeWhatsApp(true); // Force new session on server start
+initializeWhatsApp(); // Reuse existing session if available
 
 // API endpoint to get QR code
 app.get("/api/whatsapp/qr", (req, res) => {

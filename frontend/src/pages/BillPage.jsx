@@ -16,6 +16,62 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { HiSun, HiMoon } from "react-icons/hi2";
 
+// ─── Demo grocery items (grand total = ₹1,87,601) ──────────────────────────
+const DEMO_GROCERY_ITEMS = [
+  { _id: "d001", product: "Aashirvaad Atta 10 kg",         mrp: 450,  quantity: 5,  netamt: 2250  },
+  { _id: "d002", product: "Surf Excel Detergent 3 kg",     mrp: 320,  quantity: 8,  netamt: 2560  },
+  { _id: "d003", product: "Tata Salt 1 kg",                mrp: 25,   quantity: 20, netamt: 500   },
+  { _id: "d004", product: "Fortune Sunflower Oil 5 L",     mrp: 890,  quantity: 6,  netamt: 5340  },
+  { _id: "d005", product: "Amul Butter 500 g",             mrp: 285,  quantity: 12, netamt: 3420  },
+  { _id: "d006", product: "Britannia Assorted Biscuits",   mrp: 45,   quantity: 50, netamt: 2250  },
+  { _id: "d007", product: "Maggi 2-Minute Noodles",        mrp: 14,   quantity: 100,netamt: 1400  },
+  { _id: "d008", product: "Haldiram Namkeen Aloo Bhujia",  mrp: 160,  quantity: 15, netamt: 2400  },
+  { _id: "d009", product: "Parle-G Biscuits",              mrp: 10,   quantity: 100,netamt: 1000  },
+  { _id: "d010", product: "Colgate Strong Teeth 300 g",    mrp: 120,  quantity: 30, netamt: 3600  },
+  { _id: "d011", product: "Dettol Original Soap",          mrp: 68,   quantity: 40, netamt: 2720  },
+  { _id: "d012", product: "Vim Dishwash Bar",              mrp: 35,   quantity: 60, netamt: 2100  },
+  { _id: "d013", product: "MDH Kitchen King Masala",       mrp: 90,   quantity: 25, netamt: 2250  },
+  { _id: "d014", product: "Lays Classic Salted Chips",     mrp: 20,   quantity: 80, netamt: 1600  },
+  { _id: "d015", product: "Good Day Cashew Biscuits",      mrp: 30,   quantity: 60, netamt: 1800  },
+  { _id: "d016", product: "Ariel Matic Detergent 2 kg",    mrp: 450,  quantity: 10, netamt: 4500  },
+  { _id: "d017", product: "Cadbury Bournvita 1 kg",        mrp: 680,  quantity: 8,  netamt: 5440  },
+  { _id: "d018", product: "Horlicks Classic Malt 1 kg",    mrp: 590,  quantity: 10, netamt: 5900  },
+  { _id: "d019", product: "Tata Tea Gold 500 g",           mrp: 250,  quantity: 15, netamt: 3750  },
+  { _id: "d020", product: "Brooke Bond Red Label 500 g",   mrp: 295,  quantity: 18, netamt: 5310  },
+  { _id: "d021", product: "Sunfeast Yippee Noodles",       mrp: 15,   quantity: 80, netamt: 1200  },
+  { _id: "d022", product: "MTR Ready to Eat Meals",        mrp: 125,  quantity: 30, netamt: 3750  },
+  { _id: "d023", product: "Kissan Mixed Fruit Jam 500 g",  mrp: 175,  quantity: 12, netamt: 2100  },
+  { _id: "d024", product: "Amul Cheese Slices 200 g",      mrp: 225,  quantity: 15, netamt: 3375  },
+  { _id: "d025", product: "Nutella Hazelnut Spread 350 g", mrp: 455,  quantity: 8,  netamt: 3640  },
+  { _id: "d026", product: "Heinz Tomato Ketchup 500 g",    mrp: 235,  quantity: 12, netamt: 2820  },
+  { _id: "d027", product: "Kurkure Masala Munch",          mrp: 20,   quantity: 100,netamt: 2000  },
+  { _id: "d028", product: "Uncle Chipps Spicy Treat",      mrp: 20,   quantity: 80, netamt: 1600  },
+  { _id: "d029", product: "Mentos Fruit Roll",             mrp: 5,    quantity: 100,netamt: 500   },
+  { _id: "d030", product: "Polo Mint Tablets",             mrp: 40,   quantity: 30, netamt: 1200  },
+  { _id: "d031", product: "Fortune Refined Rice Oil 1 L",  mrp: 185,  quantity: 50, netamt: 9250  },
+  { _id: "d032", product: "Saffola Gold Oil 5 L",          mrp: 950,  quantity: 15, netamt: 14250 },
+  { _id: "d033", product: "Dabur Honey 500 g",             mrp: 320,  quantity: 20, netamt: 6400  },
+  { _id: "d034", product: "Real Fruit Power Juice 1 L",    mrp: 85,   quantity: 50, netamt: 4250  },
+  { _id: "d035", product: "Tropicana Orange Juice 1 L",    mrp: 140,  quantity: 30, netamt: 4200  },
+  { _id: "d036", product: "Sprite PET Bottle 2 L",         mrp: 90,   quantity: 40, netamt: 3600  },
+  { _id: "d037", product: "Coca-Cola PET Bottle 2 L",      mrp: 95,   quantity: 40, netamt: 3800  },
+  { _id: "d038", product: "Amul Taaza Milk Tetrapack 1 L", mrp: 68,   quantity: 60, netamt: 4080  },
+  { _id: "d039", product: "Nescafe Classic Instant 200 g", mrp: 450,  quantity: 10, netamt: 4500  },
+  { _id: "d040", product: "Kellogg's Corn Flakes 875 g",   mrp: 280,  quantity: 18, netamt: 5040  },
+  { _id: "d041", product: "Quaker Oats 2 kg",              mrp: 390,  quantity: 15, netamt: 5850  },
+  { _id: "d042", product: "Milo Cereal Drink 400 g",       mrp: 430,  quantity: 12, netamt: 5160  },
+  { _id: "d043", product: "Saffola Oats 1 kg",             mrp: 295,  quantity: 15, netamt: 4425  },
+  { _id: "d044", product: "Pampers Baby Dry Diapers L40",  mrp: 1290, quantity: 8,  netamt: 10320 },
+  { _id: "d045", product: "Himalaya Anti-Dandruff Shampoo",mrp: 245,  quantity: 15, netamt: 3675  },
+  { _id: "d046", product: "H&S Smooth & Silky Shampoo",    mrp: 395,  quantity: 12, netamt: 4740  },
+  { _id: "d047", product: "Whisper Ultra Soft Pads L8",    mrp: 285,  quantity: 10, netamt: 2850  },
+  { _id: "d048", product: "Gillette Guard Razor Blades",   mrp: 175,  quantity: 12, netamt: 2100  },
+  { _id: "d049", product: "Odonil Room Freshener 50 g",    mrp: 120,  quantity: 10, netamt: 1200  },
+  { _id: "d050", product: "Colgate MaxFresh 300 g",        mrp: 320,  quantity: 8,  netamt: 2560  },
+  { _id: "d051", product: "Santoor Sandal Soap 4pk",       mrp: 136,  quantity: 13, netamt: 1768  },
+  { _id: "d052", product: "Lux Soft Glow Soap 4pk",        mrp: 327,  quantity: 4,  netamt: 1308  },
+];
+
 const BillPage = () => {
   // Tabs state management (hydrate from localStorage on first render)
   const [tabs, setTabs] = useState(() => {
@@ -30,7 +86,8 @@ const BillPage = () => {
     } catch (error) {
       console.error("BillPage - Error loading tabs from localStorage:", error);
     }
-    const defaultTabs = [{ id: "1", name: "Bill 1", items: [] }];
+    // First visit — seed with grocery demo data (total ₹1,87,601)
+    const defaultTabs = [{ id: "1", name: "Sharma General Store", items: DEMO_GROCERY_ITEMS }];
     console.log("BillPage - Using default tabs:", defaultTabs);
     return defaultTabs;
   });
