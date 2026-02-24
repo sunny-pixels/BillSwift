@@ -21,12 +21,46 @@ let qrCode = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
-const clearSession = async () => {
-  const sessionsDir = path.join(__dirname, "sessions");
-  if (fs.existsSync(sessionsDir)) {
-    fs.rmSync(sessionsDir, { recursive: true, force: true });
+const SESSIONS_DIR = path.join(__dirname, "sessions");
+
+// Restore credentials from environment variable if available
+const restoreCredsFromEnv = () => {
+  const credsEnv = process.env.WHATSAPP_CREDS;
+  if (!credsEnv) return false;
+  try {
+    if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+    const credsPath = path.join(SESSIONS_DIR, "creds.json");
+    // Only restore if no existing creds file
+    if (!fs.existsSync(credsPath)) {
+      const decoded = Buffer.from(credsEnv, "base64").toString("utf-8");
+      fs.writeFileSync(credsPath, decoded);
+      console.log("Restored WhatsApp credentials from WHATSAPP_CREDS env var.");
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to restore creds from env:", err.message);
   }
-  fs.mkdirSync(sessionsDir);
+  return false;
+};
+
+// Export current credentials as base64 (to set as WHATSAPP_CREDS env var)
+const exportCredsAsBase64 = () => {
+  try {
+    const credsPath = path.join(SESSIONS_DIR, "creds.json");
+    if (fs.existsSync(credsPath)) {
+      return Buffer.from(fs.readFileSync(credsPath, "utf-8")).toString("base64");
+    }
+  } catch (err) {
+    console.error("Failed to export creds:", err.message);
+  }
+  return null;
+};
+
+const clearSession = async () => {
+  if (fs.existsSync(SESSIONS_DIR)) {
+    fs.rmSync(SESSIONS_DIR, { recursive: true, force: true });
+  }
+  fs.mkdirSync(SESSIONS_DIR);
 
   // Reset states
   sock = null;
@@ -43,12 +77,21 @@ const initializeWhatsApp = async (forceNew = false) => {
     }
 
     // Create sessions directory if it doesn't exist
-    const sessionsDir = path.join(__dirname, "sessions");
-    if (!fs.existsSync(sessionsDir)) {
-      fs.mkdirSync(sessionsDir);
+    if (!fs.existsSync(SESSIONS_DIR)) {
+      fs.mkdirSync(SESSIONS_DIR, { recursive: true });
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(sessionsDir);
+    const { state, saveCreds } = await useMultiFileAuthState(SESSIONS_DIR);
+
+    // Wrap saveCreds to also log updated base64 creds after each save
+    const saveCredsAndExport = async () => {
+      await saveCreds();
+      const b64 = exportCredsAsBase64();
+      if (b64) {
+        console.log("[CREDS_UPDATE] Set this as your WHATSAPP_CREDS env var on Render:");
+        console.log(b64);
+      }
+    };
 
     sock = makeWASocket({
       auth: state,
@@ -116,10 +159,11 @@ const initializeWhatsApp = async (forceNew = false) => {
         qrCode = null;
         reconnectAttempts = 0;
         console.log("WhatsApp connection established");
+        console.log("To persist this session across Render restarts, visit: /api/whatsapp/export-creds and set the returned value as WHATSAPP_CREDS env var.");
       }
     });
 
-    sock.ev.on("creds.update", saveCreds);
+    sock.ev.on("creds.update", saveCredsAndExport);
   } catch (error) {
     console.error("Error initializing WhatsApp:", error);
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
@@ -132,8 +176,9 @@ const initializeWhatsApp = async (forceNew = false) => {
   }
 };
 
-// Initialize WhatsApp on server start
-initializeWhatsApp(); // Reuse existing session if available
+// Initialize WhatsApp on server start — restore creds from env if available
+restoreCredsFromEnv();
+initializeWhatsApp();
 
 // API endpoint to get QR code
 app.get("/api/whatsapp/qr", (req, res) => {
@@ -148,6 +193,16 @@ app.get("/api/whatsapp/qr", (req, res) => {
     res.json({ status: "connected", endpoint: endpointUrl });
   } else {
     res.json({ status: "waiting", endpoint: endpointUrl });
+  }
+});
+
+// API endpoint to export credentials as base64 (copy value to WHATSAPP_CREDS env var on Render)
+app.get("/api/whatsapp/export-creds", (req, res) => {
+  const b64 = exportCredsAsBase64();
+  if (b64) {
+    res.json({ creds: b64, instructions: "Set this value as the WHATSAPP_CREDS environment variable on Render, then redeploy." });
+  } else {
+    res.status(404).json({ error: "No credentials found. Scan a QR code first." });
   }
 });
 
